@@ -1,8 +1,8 @@
 plugin.config = theWebUI.config;
-theWebUI.config = function(data)
+theWebUI.config = function()
 {
-	plugin.config.call(this,data);
-	plugin.reqId1 = theRequestManager.addRequest("trt", 
+	plugin.config.call(this);
+	plugin.reqId1 = theRequestManager.addRequest("trt",
 		theRequestManager.map('cat=')+
 		'"$'+theRequestManager.map("t.multicall=")+
 		theRequestManager.map("d.get_hash=")+
@@ -17,7 +17,7 @@ theWebUI.config = function(data)
 			torrent.seeds = torrent.seeds_actual + " (" + torrent.seeds_all + ")";
 		}
 	);
-	plugin.reqId2 = theRequestManager.addRequest("trt", 
+	plugin.reqId2 = theRequestManager.addRequest("trt",
 		theRequestManager.map('cat=')+
 		'"$'+theRequestManager.map("t.multicall=")+
 		theRequestManager.map("d.get_hash=")+

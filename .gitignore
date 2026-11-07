@@ -5,18 +5,27 @@
 .project
 .jsdtscope
 
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
 # ruTorrent
 conf/users/*
+conf/config.local.php
 share/users/*
 share/torrents/*
 share/settings/*
+plugins/*/conf.local.php
 plugins/xirvik
 .htpasswd
 plugins/shoutbox
 plugins/backup
 plugins/news
 plugins/_xgetdir
-plugins/spectrogram
 plugins/xcreate
 plugins/explorer
 plugins/multirpc
@@ -35,5 +44,19 @@ plugins/plimits
 plugins/localnews
 plugins/hints
 plugins/dmca
+plugins/autodl-irssi
+plugins/xnfo/
+plugins/xshoutbox/
+plugins/donecolor/
+plugins/filebot/
+plugins/hashblock/
+plugins/ratiocolor/
+plugins/repeat/
+plugins/set_title/
+php/commands.lst
 .idea/*
 *.iml
+rutorrent-custom-plugins
+
+# MacOS
+.DS_Store

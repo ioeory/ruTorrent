@@ -6,7 +6,7 @@
  * Author: Oleksandr Natalenko (oleksandr@natalenko.name)
  */
 
- theUILang.checkTorrent 	= "Перевірити оновлення";
+ theUILang.checkTorrent		= "Перевірити оновлення";
  theUILang.chkHdr		= "Перевірка оновлення torrent-файлу";
  theUILang.checkedAt		= "Виконано";
  theUILang.checkedResult	= "Результат";
@@ -17,7 +17,8 @@
  				  "Імовірно, видалено",
  				  "Сталася помилка доступу до трекера",
  				  "Сталася помилка взаємодії з rTorrent",
- 				  "Немає необхідності"
+ 				  "Немає необхідності",
+ 				  "Ігнорується"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

@@ -1,19 +1,19 @@
 <?php
-eval(getPluginConf($plugin["name"]));
 
-$st = getSettingsPath();
-makeDirectory( array($st.'/rss',$st.'/rss/cache') );
-$needStart = isLocalMode() && $theSettings->linkExist;
-if($needStart)
-{
-	require_once($rootPath.'/plugins/rss/rss.php');
-	$mngr = new rRSSManager();
-	if($mngr->setHandlers())
-	{
-		$theSettings->registerPlugin($plugin["name"],$pInfo["perms"]);
-	}
-	else
-		$jResult .= "plugin.disable(); noty('rss: '+theUILang.pluginCantStart,'error');";
+eval(FileUtil::getPluginConf($plugin["name"]));
+
+$st = FileUtil::getSettingsPath();
+FileUtil::makeDirectory([$st . '/rss',$st . '/rss/cache']);
+$needStart = User::isLocalMode() && $theSettings->linkExist;
+if ($needStart) {
+    // Go back to ruTorrent root folder and include rss.php plugin file
+    require_once(dirname(__FILE__) . "/../../plugins/rss/rss.php");
+    $mngr = new rRSSManager();
+    if ($mngr->setHandlers()) {
+        $theSettings->registerPlugin($plugin["name"], $pInfo["perms"]);
+    } else {
+        $jResult .= "plugin.disable(); noty('rss: '+theUILang.pluginCantStart,'error');";
+    }
+} else {
+    $theSettings->registerPlugin($plugin["name"], $pInfo["perms"]);
 }
-else
-	$theSettings->registerPlugin($plugin["name"],$pInfo["perms"]);

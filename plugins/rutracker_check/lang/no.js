@@ -6,7 +6,7 @@
  * Author: nirosa (nirosax@gmail.com)
  */
 
- theUILang.checkTorrent 	= "Søk etter oppdateringer";
+ theUILang.checkTorrent		= "Søk etter oppdateringer";
  theUILang.chkHdr		= "Torrent-oppdateringssjekk";
  theUILang.checkedAt		= "Sist sjekket";
  theUILang.checkedResult	= "Resultat";
@@ -17,7 +17,8 @@
  				  "Sannsynligvis slettet",
  				  "Tilgangsfeil med trackeren oppstod",
  				  "Kommunikasjonsfeil med rTorrent oppstod",
- 				  "Ikke nødvendig"
+ 				  "Ikke nødvendig",
+ 				  "Ignorert"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

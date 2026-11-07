@@ -5,12 +5,15 @@
  *
  * Author: Chris Kanatas (ckanatas@gmail.com)
  */
- 
+
  theUILang.tskCommand		= "Λειτουργεί...";
  theUILang.tskCommandDone	= "Τελείωσε.";
  theUILang.tskConsole		= "Κονσόλα";
  theUILang.tskErrors		= "Διαγνωστικά";
  theUILang.tskBackground	= "Απόκρυψη";
+ theUILang.tskCopy		= "Copy";
+ theUILang.tskLogEmpty		= "Console log is empty.";
+ theUILang.tskSaveLog		= "Save Log";
  theUILang.tskStart		= "Εκκίνηση";
  theUILang.tskFinish		= "Ολοκλήρωση";
  theUILang.tskElapsed		= "Χρόνος που πέρασε";
@@ -23,5 +26,5 @@
  theUILang.tskRunning		= "Εκτελείται";
  theUILang.tskArg		= "Παράμετρος";
  theUILang.tskTasks		= "Εργασίες";
- 
+
 thePlugins.get("_task").langLoaded();

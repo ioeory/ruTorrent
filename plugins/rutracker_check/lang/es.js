@@ -3,10 +3,10 @@
  *
  * Spanish language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.checkTorrent 	= "Check for Update";
+ theUILang.checkTorrent		= "Check for Update";
  theUILang.chkHdr		= "Torrent Update Check";
  theUILang.checkedAt		= "Last Checked";
  theUILang.checkedResult	= "Result";
@@ -17,7 +17,8 @@
  				  "Probably deleted",
  				  "Error accessing the tracker",
  				  "Error interacting with rTorrent",
- 				  "No need"
+ 				  "No need",
+ 				  "Ignored"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

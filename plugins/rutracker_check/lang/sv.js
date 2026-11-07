@@ -3,10 +3,10 @@
  *
  * Swedish language file.
  *
- * Author: Magnus Holm (holmen@brasse.se) 
+ * Author: Magnus Holm (holmen@brasse.se)
  */
 
- theUILang.checkTorrent 	= "Sök efter uppdateringar";
+ theUILang.checkTorrent		= "Sök efter uppdateringar";
  theUILang.chkHdr		= "Torrent-uppdateringskontroll";
  theUILang.checkedAt		= "Senaste sökning";
  theUILang.checkedResult	= "Resultat";
@@ -17,7 +17,8 @@
  				  "Förmodligen borttagen",
  				  "Fel, uppstigning tracker",
  				  "Fel vid interaktivitet med rTorrent",
- 				  "Behövs inte"
+ 				  "Behövs inte",
+ 				  "Ignorerad"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

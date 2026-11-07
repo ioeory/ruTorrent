@@ -8,10 +8,10 @@
 
  theUILang.rssNewRule		= "Quy luật mới";
  theUILang.mnu_rssurlrewrite	= "Quy luật thay đổi RSS";
- theUILang.rssRulesManager	= "Quản lý Quy luật";
+ theUILang.rssRulesManager	= "Quản lý quy luật RSS";
  theUILang.rssAddRule		= "Thêm";
  theUILang.rssDelRule		= "Xóa";
- theUILang.rssCheckRule 	= "Kiểm tra";
+ theUILang.rssCheckRule		= "Kiểm tra";
  theUILang.rssRulesLegend	= "Cài đặt quy luật";
  theUILang.rssSrcHref		= "Nếu URL của torrent trùng với";
  theUILang.rssSrcGuid		= "Nếu mô tả của của torrent trùng với";
@@ -23,7 +23,7 @@
  theUILang.rssURLInfo		= "Thông tin URL";
  theUILang.rssURLGUID		= "Mô tả URL";
  theUILang.rssURLHref		= "Tải URL";
- theUILang.rssPatternError	= "Lỗi trong chuỗi mẫu";
+ theUILang.rssPatternError	= "Lỗi trong chuỗi mẫu.";
  theUILang.rssStatus		= "RSS";
 
 thePlugins.get("rssurlrewrite").langLoaded();

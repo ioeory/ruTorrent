@@ -8,10 +8,10 @@
 
  theUILang.rssNewRule		= "Nieuwe regel";
  theUILang.mnu_rssurlrewrite	= "Vervangende URL in RSS";
- theUILang.rssRulesManager	= "Regel manager";
+ theUILang.rssRulesManager	= "RSS-regelmanager";
  theUILang.rssAddRule		= "Toevoegen";
  theUILang.rssDelRule		= "Verwijderen";
- theUILang.rssCheckRule 	= "?";
+ theUILang.rssCheckRule		= "?";
  theUILang.rssRulesLegend	= "Regel instellingen";
  theUILang.rssSrcHref		= "Wanneer de URL gelijk is aan";
  theUILang.rssSrcGuid		= "Als de beschrijving van de torrent-URL's gelijk is aan";

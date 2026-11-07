@@ -4,19 +4,19 @@ plugin.loadLang();
 if(plugin.canChangeOptions())
 {
 	plugin.addAndShowSettings = theWebUI.addAndShowSettings;
-	theWebUI.addAndShowSettings = function(arg) 
+	theWebUI.addAndShowSettings = function(arg)
 	{
 		if(plugin.enabled)
 		{
 			var s = '';
 			for(var i in plugin.lookData)
 				s+=(i+'|'+plugin.lookData[i]+'\r\n');
-			$('#lookat').val($.trim(s));
+			$('#lookat').val(s.trim());
 		}
 		plugin.addAndShowSettings.call(theWebUI,arg);
 	}
 
-	theWebUI.lookatWasChanged = function() 
+	theWebUI.lookatWasChanged = function()
 	{
 		var arr = $('#lookat').val().split("\n");
 		var j = 0;
@@ -24,7 +24,7 @@ if(plugin.canChangeOptions())
 		{
 			if(j>=arr.length)
 				return(true);
-			if( i+'|'+plugin.lookData[i] != $.trim(arr[j++]) )
+			if( i+'|'+plugin.lookData[i] != arr[j++].trim() )
 				return(true);
 		}
 		return(j!=arr.length);
@@ -36,7 +36,7 @@ if(plugin.canChangeOptions())
 	}
 
 	plugin.setSettings = theWebUI.setSettings;
-	theWebUI.setSettings = function() 
+	theWebUI.setSettings = function()
 	{
 		plugin.setSettings.call(this);
 		if(plugin.enabled && this.lookatWasChanged())
@@ -70,7 +70,7 @@ if(plugin.canChangeMenu())
 				var patt = new RegExp( plugin.partsToRemove, 'gi' );
 				title = title.replace( patt, '' );
 				var url = plugin.lookData[no].replace( '{title}', encodeURIComponent(title).replace(/(%20|_|\.|\[|\])/g,'+') );
-				window.open(url, "_blank");
+				openExternalURL(url);
 			}
 		}
 	}
@@ -81,28 +81,30 @@ if(plugin.canChangeMenu())
 		plugin.createMenu.call(this, e, id);
 		if(plugin.enabled && plugin.allStuffLoaded)
 		{
-			var table = this.getTable("trt");
 			var el = theContextMenu.get( theUILang.Properties );
 			if( el )
 			{
 				var _c0 = [];
-				for(var i in plugin.lookData)
-					_c0.push( [i, (this.getTable("trt").selCount==1) && this.isTorrentCommandEnabled("lookat",id) ? "theWebUI.lookAt('"+addslashes(i)+"')" : null] );
+				for(const i in plugin.lookData)
+					_c0.push( [i, (this.getTable("trt").selCount==1) && this.isTorrentCommandEnabled("lookat",id) ? () => theWebUI.lookAt(i) : null] );
 				theContextMenu.add( el, [CMENU_CHILD, theUILang.lookAt, _c0] );
                         }
 		}
 	}
 }
 
-plugin.onLangLoaded = function() 
-{
-	this.attachPageToOptions($('<div>').attr("id","st_lookat").html(
-		"<fieldset>"+
-			"<legend>"+theUILang.lookAtDesc+"</legend>"+
-			"<div class=\"op100l\">"+
-				"<textarea id='lookat'></textarea>"+
-			"</div>"+
-		"</fieldset>")[0],theUILang.lookAt);
+plugin.onLangLoaded = function() {
+	this.attachPageToOptions(
+		$('<div>').attr("id","st_lookat").append(
+			$("<fieldset>").append(
+				$("<legend>").text(theUILang.lookAtDesc),
+				$("<div>").append(
+					$("<textarea>").attr({id:"lookat"}),
+				),
+			),
+		)[0],
+		theUILang.lookAt,
+	);
 }
 
 plugin.onRemove = function()

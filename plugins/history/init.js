@@ -1,4 +1,5 @@
 plugin.loadLang();
+plugin.loadMainCSS();
 plugin.mark = 0;
 plugin.hstTimeout = null;
 
@@ -9,11 +10,11 @@ plugin.showNotification = function(item)
 	if(plugin.allStuffLoaded)
 	{
 		var notification = notify.createNotification( plugin.actionNames[item.action], { body: item.name, icon: { x16: 'images/favicon.ico', x32: 'images/favicon-32x32.png' } } );
-		setTimeout(function () 
+		setTimeout(function ()
 		{
                		notification.close();
                 }, theWebUI.history.closeinterval*1000);
-	}	                
+	}
 }
 
 plugin.isNotificationsSupported = function()
@@ -21,27 +22,22 @@ plugin.isNotificationsSupported = function()
 	return( (plugin.allStuffLoaded && !notify.isSupported) ? false : notify.permissionLevel() );
 }
 
-plugin.rebuildNotificationsPage = function()
-{
-	if(plugin.allStuffLoaded)
-	{
-		var state = plugin.isNotificationsSupported();
-		$('#notifTip').text(theUILang.notifTip[state ]);
-		switch(state)
-		{
+plugin.rebuildNotificationsPage = function() {
+	if (plugin.allStuffLoaded) {
+		const state = plugin.isNotificationsSupported();
+		$('#notifTip').text(theUILang.notifTip[state]);
+		switch (state) {
 			case notify.PERMISSION_DENIED:
-			case false: 
-			{
+			case false: {
 				$('#notifPerms, #notifParam').hide();
 				break;
 			}
-			case notify.PERMISSION_GRANTED: 
-			{
+			case notify.PERMISSION_GRANTED: {
 				$('#notifPerms').hide();
 				break;
 			}
 		}
-	}		
+	}
 }
 
 if(plugin.canChangeOptions())
@@ -58,13 +54,13 @@ if(plugin.canChangeOptions())
 			$('#not_closeinterval').val( theWebUI.history.closeinterval );
 			$('#history_limit').val( theWebUI.history.limit );
 			$('#pushbullet_key').val( theWebUI.history.pushbullet_key );
-			$$('pushbullet_enabled').checked = ( theWebUI.history.pushbullet_enabled != 0 );			
+			$$('pushbullet_enabled').checked = ( theWebUI.history.pushbullet_enabled != 0 );
 			$$('pushbullet_addition').checked = ( theWebUI.history.pushbullet_addition != 0 );
 			$$('pushbullet_finish').checked = ( theWebUI.history.pushbullet_finish != 0 );
 			$$('pushbullet_deletion').checked = ( theWebUI.history.pushbullet_deletion != 0 );
 
-			$('#not_autoclose').change();
-			$('#pushbullet_enabled').change();
+			$('#not_autoclose').trigger('change');
+			$('#pushbullet_enabled').trigger('change');
 
 			plugin.rebuildNotificationsPage();
 		}
@@ -105,7 +101,7 @@ if(plugin.canChangeOptions())
 			"&pushbullet_addition=" + ( $$('pushbullet_addition').checked ? '1' : '0' ) +
 			"&pushbullet_deletion=" + ( $$('pushbullet_deletion').checked  ? '1' : '0' ) +
 			"&pushbullet_finish=" + ( $$('pushbullet_finish').checked  ? '1' : '0' ) +
-			"&pushbullet_enabled=" + ( $$('pushbullet_enabled').checked  ? '1' : '0' ) +			
+			"&pushbullet_enabled=" + ( $$('pushbullet_enabled').checked  ? '1' : '0' ) +
 			"&pushbullet_key=" + $('#pushbullet_key').val();
 
 		this.contentType = "application/x-www-form-urlencoded";
@@ -117,28 +113,28 @@ if(plugin.canChangeOptions())
 if(plugin.canChangeTabs() || plugin.canChangeColumns())
 {
 	plugin.config = theWebUI.config;
-	theWebUI.config = function(data)
+	theWebUI.config = function()
 	{
 		if(plugin.canChangeTabs())
 		{
 	        	plugin.attachPageToTabs($('<div>').attr("id","history").addClass("table_tab stable").get(0),"History","lcont");
-			theWebUI.tables["hst"] =  
+			theWebUI.tables["hst"] =
 			{
 	        		obj:		new dxSTable(),
 				container:	"history",
-				columns:	
+				columns:
 				[
-					{ text: theUILang.Name, 		width: "200px", id: "name",		type: TYPE_STRING }, 
+					{ text: theUILang.Name, 		width: "200px", id: "name",		type: TYPE_STRING },
 		      			{ text: theUILang.Status, 		width: "100px",	id: "status",		type: TYPE_STRING },
-					{ text: 'Time',	 			width: "100px", id: "time",		type: TYPE_NUMBER }, 
-			   		{ text: theUILang.Size, 		width: "60px",	id: "size", 		type: TYPE_NUMBER },
+					{ text: 'Time',	 			width: "110px", id: "time",		type: TYPE_NUMBER },
+			   		{ text: theUILang.Size, 		width: "70px",	id: "size", 		type: TYPE_NUMBER },
 					{ text: theUILang.Downloaded, 		width: "100px",	id: "downloaded",	type: TYPE_NUMBER },
 					{ text: theUILang.Uploaded, 		width: "100px",	id: "uploaded",		type: TYPE_NUMBER },
 					{ text: theUILang.Ratio, 		width: "60px",	id: "ratio",		type: TYPE_NUMBER },
 					{ text: theUILang.Label, 		width: "60px", 	id: "label",		type: TYPE_STRING },
-					{ text: theUILang.Created_on,		width: "100px", id: "created",		type: TYPE_NUMBER },
-					{ text: 'SeedingTime', 			width: '100px', id: 'seedingtime', 	type: TYPE_NUMBER },
-					{ text: 'AddTime', 			width: '100px', id: 'addtime', 		type: TYPE_NUMBER },
+					{ text: theUILang.Created_on,		width: "110px", id: "created",		type: TYPE_NUMBER },
+					{ text: 'SeedingTime', 			width: '110px', id: 'seedingtime', 	type: TYPE_NUMBER },
+					{ text: 'AddTime', 			width: '110px', id: 'addtime', 		type: TYPE_NUMBER },
 					{ text: 'Tracker', 			width: '100px', id: 'tracker', 		type: TYPE_STRING }
 				],
 				format:	function(table,arr)
@@ -148,20 +144,20 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 						if(arr[i]==null)
 							arr[i] = '';
 						else
-							switch(table.getIdByCol(i)) 
+							switch(table.getIdByCol(i))
 							{
 								case "seedingtime" :
 								case "time":
 								case "addtime":
-								case 'created' : 
-									arr[i] = arr[i] ? theConverter.date(iv(arr[i])+theWebUI.deltaTime/1000) : '';
+								case 'created' :
+									arr[i] = arr[i] ? theConverter.date(iv(arr[i])) : '';
 									break;
 								case 'downloaded' :
 								case 'uploaded' :
 								case 'size' :
-	      								arr[i] = theConverter.bytes(arr[i]);
+	      								arr[i] = theConverter.bytes(arr[i], 'table');
 									break;
-								case 'ratio' : 
+								case 'ratio' :
 									arr[i] = (arr[i] ==- 1) ? "\u221e" : theConverter.round(arr[i] / 1000, 3);
 									break;
 								case 'status' :
@@ -178,7 +174,7 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 
 		if(plugin.canChangeColumns())
 		{
-			this.tables.trt.columns.push({text: 'PushBullet', width: '100px', id: 'pushbullet', type: TYPE_NUMBER});
+			this.tables.trt.columns.push({text: 'PushBullet', width: '80px', id: 'pushbullet', type: TYPE_NUMBER});
 			plugin.trtFormat = this.tables.trt.format;
 			this.tables.trt.format = function(table,arr)
 			{
@@ -202,7 +198,7 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 			}
 		}
 
-		plugin.config.call(theWebUI,data);
+		plugin.config.call(this);
 
 		if(plugin.canChangeColumns())
 		{
@@ -210,9 +206,9 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 			{
 				torrent.pushbullet = value;
 			});
-		}			
+		}
 
-		if(plugin.canChangeTabs())		
+		if(plugin.canChangeTabs())
 			plugin.renameHistoryStuff();
 	}
 
@@ -233,8 +229,8 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 
 	plugin.historyRefresh = function()
 	{
-		theWebUI.requestWithoutTimeout("?action=gethistory",[plugin.onGetHistory, plugin]);	
-	}	
+		theWebUI.requestWithoutTimeout("?action=gethistory",[plugin.onGetHistory, plugin]);
+	}
 
 	rTorrentStub.prototype.gethistory = function()
 	{
@@ -247,7 +243,7 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 	dxSTable.prototype.historyRemove = function()
 	{
 		if(theWebUI.settings["webui.confirm_when_deleting"])
-			askYesNo( theUILang.hstDelete, theUILang.hstDeletePrompt, "theWebUI.getTable('"+this.prefix+"').cmdHistory('delete')" );
+			askYesNo( theUILang.hstDelete, theUILang.hstDeletePrompt, () => this.cmdHistory('delete') );
 		else
 			this.cmdHistory('delete');
 	}
@@ -261,9 +257,7 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 				req+=("&hash=" + k);
 		}
 		if(req.length)
-		{
 			theWebUI.request("?action=hst"+cmd+req,[plugin.onGetHistory, plugin]);
-		}
 	}
 
 	rTorrentStub.prototype.hstdelete = function()
@@ -280,10 +274,10 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 	{
 		theWebUI.getTrackerName = function(announce)
 		{
-		        var domain = '';
+			var domain = '';
 			if(announce)
 			{
-				var parts = announce.match(/^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/);
+				var parts = announce.match(/^(?:([^:/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:/?#]*)(?::(\d*))?))((((?:[^?#/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/);
 				if(parts && (parts.length>6))
 				{
 					domain = parts[6];
@@ -344,11 +338,13 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 		if(updated)
 		{
 			table.refreshRows();
-			if(table.sIndex !=- 1)
+			if(table.sortId)
 				table.Sort();
 		}
 		if((theWebUI.activeView=='history') || (plugin.allStuffLoaded && (plugin.isNotificationsSupported()===notify.PERMISSION_GRANTED)))
+		{
 			plugin.hstTimeout = window.setTimeout(plugin.historyRefresh,theWebUI.settings["webui.update_interval"]);
+		}
 		else
         		if(plugin.hstTimeout)
 	        	{
@@ -374,34 +370,14 @@ if(plugin.canChangeTabs() || plugin.canChangeColumns())
 			plugin.onShow.call(this,id);
 	}
 
-	plugin.resizeBottom = theWebUI.resizeBottom;
-	theWebUI.resizeBottom = function( w, h )
-	{
-		plugin.resizeBottom.call(theWebUI,w,h);
-        	if(w!==null)
-			w-=8;
-		if(h!==null)
-        	{
-			h-=($("#tabbar").height());
-			h-=2;
-        	}
-        	if(theWebUI.configured)
-        	{
-			var table = this.getTable("hst");
-			if(table)
-				table.resize(w,h);
-		}
-	}
-
 	if(plugin.canChangeMenu())
 	{
 		dxSTable.prototype.historySelect = function(e,id)
 		{
 			if(plugin.enabled && plugin.allStuffLoaded && (e.which==3))
 			{
-				var self = "theWebUI.getTable('"+this.prefix+"').";
 				theContextMenu.clear();
-				theContextMenu.add([theUILang.Remove, self+"cmdHistory('delete')"]);
+				theContextMenu.add([theUILang.Remove, () => theWebUI.getTable(this.prefix).historyRemove()]);
 				theContextMenu.show(e.clientX,e.clientY);
 			}
 		}
@@ -437,105 +413,134 @@ if(plugin.canChangeMenu())
 			var el = theContextMenu.get(theUILang.peerAdd);
 			if( el )
 			{
-				if(table.selCount==1) 
-				{			
-					theContextMenu.add(el,[CMENU_CHILD, 'Pushbullet', 
+				if(table.selCount==1)
+				{
+					theContextMenu.add(el,[CMENU_CHILD, 'Pushbullet',
 					[
-						[ theUILang.turnNotifyOn, theWebUI.torrents[id].pushbullet ? "theWebUI.setPushbullet('')" : null ],
-					 	[ theUILang.turnNotifyOff, theWebUI.torrents[id].pushbullet ? null : "theWebUI.setPushbullet('1')" ]
+						[ theUILang.turnNotifyOn, theWebUI.torrents[id].pushbullet ? () => theWebUI.setPushbullet('') : null ],
+						[ theUILang.turnNotifyOff, theWebUI.torrents[id].pushbullet ? null : () => theWebUI.setPushbullet('1') ]
 					]]);
 				}
 				else
 				{
-					theContextMenu.add(el,[CMENU_CHILD, 'Pushbullet', 
+					theContextMenu.add(el,[CMENU_CHILD, 'Pushbullet',
 					[
-						[ theUILang.turnNotifyOn, "theWebUI.setPushbullet('1')" ],
-					 	[ theUILang.turnNotifyOff, "theWebUI.setPushbullet('')" ]
+						[ theUILang.turnNotifyOn, () => theWebUI.setPushbullet('1') ],
+						[ theUILang.turnNotifyOff, () => theWebUI.setPushbullet('') ]
 					]]);
 				}
                         }
 		}
-	}	
+	}
 }
 
-plugin.onLangLoaded = function()
-{
-	injectScript(plugin.path+"/desktop-notify.js",function()
-	{
-		plugin.attachPageToOptions( $("<div>").attr("id","st_history").html(
-			"<div class='checkbox'>" +
-				"<label for='history_limit'>"+ theUILang.historyLimit +"</label>"+
-				"<input type='text' maxlength=4 id='history_limit' class='TextboxShort'/>"+
-			"</div>" +
-			"<fieldset>"+
-				"<legend>"+theUILang.historyLog+"</legend>"+
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='history_addition'/>"+
-					"<label for='history_addition'>"+ theUILang.historyAddition +"</label>"+
-				"</div>" +
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='history_deletion'/>"+
-					"<label for='history_deletion'>"+ theUILang.historyDeletion +"</label>"+
-				"</div>" +
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='history_finish'/>"+
-					"<label for='history_finish'>"+ theUILang.historyFinish +"</label>"+
-				"</div>" +
-			"</fieldset>"+
-			"<fieldset>"+
-				"<legend>"+theUILang.historyNotification+"</legend>"+
-				"<div id='notifTip'>" +
-				"</div>" +
-				"<input type='button' value='"+theUILang.enableNotifications+"' id='notifPerms'/>"+
-				"<div id='notifParam'>" +
-					"<input type='checkbox' id='not_autoclose' onchange=\"linked(this, 0, ['not_closeinterval']);\" />"+
-					"<label for='not_closeinterval' id='lbl_not_closeinterval' class='disabled'>"+ theUILang.notifAutoClose +" </label>" +
-					"<input type='text' id='not_closeinterval' class='TextboxShort' maxlength='3' disabled='true'/>" + theUILang.s +
-				"</div>" +
-			"</fieldset>"+
-			"<fieldset>"+
-				"<legend><a href='https://www.pushbullet.com/' target='_blank'>"+theUILang.pushbulletNotification+"</a></legend>"+
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='pushbullet_enabled' onchange=\"linked(this, 0, ['pushbullet_key','pushbullet_addition','pushbullet_deletion','pushbullet_finish']);\"/>"+
-					"<label for='pushbullet_enabled'>"+ theUILang.Enabled +"</label>"+
-				"</div>" +				
-				"<label for='pushbullet_key' id='lbl_pushbullet_key' class='disabled'>"+ theUILang.pushbulletKey +"</label>"+
-				"<input type='text' id='pushbullet_key' class='TextboxLarge' disabled='true' />"+
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='pushbullet_addition' disabled='true' />"+
-					"<label for='pushbullet_addition' id='lbl_pushbullet_addition' class='disabled'>"+ theUILang.historyAddition +"</label>"+
-				"</div>" +
-				"<div class='checkbox'>" +
-					"<input type='checkbox' class='disabled' id='pushbullet_deletion' disabled='true' />"+
-					"<label for='pushbullet_deletion' id='lbl_pushbullet_deletion' class='disabled'>"+ theUILang.historyDeletion +"</label>"+
-				"</div>" +
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='pushbullet_finish' disabled='true' />"+
-					"<label for='pushbullet_finish' id='lbl_pushbullet_finish' class='disabled'>"+ theUILang.historyFinish +"</label>"+
-				"</div>" +
-			"</fieldset>"
-			)[0], theUILang.history );
-		$('#notifPerms').click( function()
-		{
-			notify.requestPermission(function() 
-			{ 
+plugin.onLangLoaded = function() {
+	injectScript(plugin.path+"desktop-notify.js", function() {
+		plugin.attachPageToOptions(
+			$("<div>").attr({id:"st_history"}).append(
+				$("<fieldset>").append(
+					$("<legend>").text(theUILang.historyLog),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("col-12 col-md-6").append(
+							$("<label>").attr({for:"history_limit"}).text(theUILang.historyLimit),
+						),
+						$("<div>").addClass("col-12 col-md-3").append(
+							$("<input>").attr({type:"text", id:"history_limit", maxlength:4}),
+						),
+						...[
+							["history_addition", theUILang.historyAddition],
+							["history_deletion", theUILang.historyDeletion],
+							["history_finish", theUILang.historyFinish],
+						].map(([id, text]) => $("<div>").addClass("col-12 col-md-4").append(
+							$("<input>").attr({type:"checkbox", id:id}),
+							$("<label>").attr({for:id}).text(text),
+						)),
+					),
+				),
+				$("<fieldset>").append(
+					$("<legend>").text(theUILang.historyNotification),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("col-12").append(
+							$("<div>").attr({id:"notifTip"}),
+						),
+						$("<div>").addClass("col-12").append(
+							$("<button>").attr({type:"button", id:"notifPerms"}).text(theUILang.enableNotifications),
+						),
+					),
+					$("<div>").attr({id:"notifParam"}).addClass("row").append(
+						$("<div>").addClass("col-12 col-md-6").append(
+							$("<input>")
+								.attr({type:"checkbox", id:"not_autoclose"})
+								.on("change", (ev) => linked(ev.target, 0, ["not_closeinterval"])),
+							$("<label>")
+								.attr({for:"not_closeinterval", id:"lbl_not_closeinterval"})
+								.text(theUILang.notifAutoClose),
+						),
+						$("<div>").addClass("col-6 col-md-3").append(
+							$("<input>").attr({type:"text", id:"not_closeinterval", maxlength:3}).prop("disabled", true),
+						),
+						$("<div>").addClass("col-6 col-md-3").append(
+							$("<span>").text(theUILang.s),
+						),
+					),
+				),
+				$("<fieldset>").append(
+					$("<legend>").append(
+						$("<a>").attr({href:"https://www.pushbullet.com/", target:"_blank"}).text(theUILang.pushbulletNotification),
+					),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("col-12").append(
+							$("<input>")
+								.attr({type:"checkbox", id:"pushbullet_enabled", onchange:";"})
+								.on("change", (ev) => linked(
+									ev.target, 0,
+									['pushbullet_key','pushbullet_addition','pushbullet_deletion','pushbullet_finish'],
+								)),
+							$("<label>").attr({for:"pushbullet_enabled"}).text(theUILang.Enabled),
+						),
+						$("<div>").addClass("col-12 col-md-6").append(
+							$("<label>")
+								.attr({for:"pushbullet_key", id:"lbl_pushbullet_key"})
+								.text(theUILang.pushbulletKey),
+						),
+						$("<div>").addClass("col-12 col-md-6").append(
+							$("<input>").attr({type:"text", id:"pushbullet_key"}).prop("disabled", true),
+						),
+						...[
+							["pushbullet_addition", theUILang.historyAddition],
+							["pushbullet_deletion", theUILang.historyDeletion],
+							["pushbullet_finish", theUILang.historyFinish],
+						].map(([id, text]) => $("<div>").addClass("col-12 col-md-4").append(
+							$("<input>").attr({type:"checkbox", id:id}).prop("disabled", true),
+							$("<label>").attr({for:id, id:`lbl_${id}`}).text(text),
+						)),
+					),
+				),
+			)[0],
+			theUILang.history,
+		);
+		$('#notifPerms').on('click', () => notify.requestPermission(() => {
 				plugin.rebuildNotificationsPage();
 				plugin.historyRefresh();
-			});
-		});
+			})
+		);
 		plugin.actionNames = ['', theUILang.Added, theUILang.Finished, theUILang.Deleted];
 		plugin.markLoaded();
-	});		
+	});
 }
 
 plugin.onRemove = function()
 {
 	plugin.removePageFromOptions("st_history");
-	theWebUI.getTable("trt").removeColumnById("pushbullet");	
-	theRequestManager.removeRequest( "trt", plugin.reqId1 );	
+	theWebUI.getTable("trt").removeColumnById("pushbullet");
+	if(thePlugins.isInstalled("rss"))
+		theWebUI.getTable("rss").removeColumnById("pushbullet");
+	if(thePlugins.isInstalled("extsearch"))
+		theWebUI.getTable("teg").removeColumnById("pushbullet");
+	theRequestManager.removeRequest( "trt", plugin.reqId1 );
 }
 
-plugin.langLoaded = function() 
+plugin.langLoaded = function()
 {
 	if(plugin.enabled)
 		plugin.onLangLoaded();

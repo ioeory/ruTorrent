@@ -3,10 +3,11 @@
  *
  * Italian language file.
  *
- * Author: 
+ * Author: Gianni
  */
 
- theUILang.seedingTime		= "Finished";
- theUILang.addTime		= "Added";
+ theUILang.seedingTime		= "Finito";
+ theUILang.addTime		= "Aggiunto";
+ theUILang.seedingTimeHighlight		= "Evidenzia i torrent terminati da almeno (ad esempio 1d, 2w)";
 
 thePlugins.get("seedingtime").langLoaded();

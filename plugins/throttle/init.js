@@ -1,8 +1,7 @@
 plugin.loadLang();
-plugin.loadMainCSS();
 
 plugin.config = theWebUI.config;
-theWebUI.config = function(data)
+theWebUI.config = function()
 {
 	if(plugin.canChangeColumns())
 	{
@@ -26,7 +25,7 @@ theWebUI.config = function(data)
 	{
 		torrent.throttle = value;
 	});
-	plugin.config.call(this,data);
+	plugin.config.call(this);
 	if(plugin.canChangeColumns())
 		plugin.trtRenameColumn();
 }
@@ -67,7 +66,7 @@ if(plugin.canChangeColumns())
 if(plugin.canChangeOptions())
 {
 	plugin.addAndShowSettings = theWebUI.addAndShowSettings;
-	theWebUI.addAndShowSettings = function(arg) 
+	theWebUI.addAndShowSettings = function(arg)
 	{
 		if(plugin.enabled)
 		{
@@ -87,7 +86,7 @@ if(plugin.canChangeOptions())
 		plugin.addAndShowSettings.call(theWebUI,arg);
 	}
 
-	theWebUI.throttleWasChanged = function() 
+	theWebUI.throttleWasChanged = function()
 	{
 		for(var i=0; i<theWebUI.maxThrottle; i++)
 		{
@@ -100,7 +99,7 @@ if(plugin.canChangeOptions())
 	}
 
 	plugin.setSettings = theWebUI.setSettings;
-	theWebUI.setSettings = function() 
+	theWebUI.setSettings = function()
 	{
 		plugin.setSettings.call(this);
 		if(plugin.enabled && this.throttleWasChanged())
@@ -112,7 +111,7 @@ if(plugin.canChangeOptions())
 		this.content = "default="+iv($('#chDefault').val());
 		for(var i=0; i<theWebUI.maxThrottle; i++)
 		{
-			var name = $.trim($('#thr_name'+i).val());
+			var name = $('#thr_name'+i).val().trim();
 			var up = iv($('#thr_up'+i).val());
 			var down = iv($('#thr_down'+i).val());
         		if(name.length)
@@ -152,12 +151,12 @@ if(plugin.canChangeMenu())
 				if(table.selCount==1)
 					curNo = theWebUI.getThrottleData(id);
 				var down = [];
-				down.push([theUILang.mnuUnlimited, (curNo==-1) ? null : "theWebUI.setThrottle('-1')"]);
+				down.push([theUILang.mnuUnlimited, (curNo==-1) ? null : () => theWebUI.setThrottle('-1')]);
 				down.push([CMENU_SEP]);
-				for(var i=0; i<theWebUI.maxThrottle; i++)
+				for(let i=0; i<theWebUI.maxThrottle; i++)
 				{
 					if(theWebUI.isCorrectThrottle(i))
-						down.push([theWebUI.throttles[i].name,(i!=curNo) ? "theWebUI.setThrottle('"+i+"')" : null]);
+						down.push([theWebUI.throttles[i].name,(i!=curNo) ? () => theWebUI.setThrottle(i) : null]);
 				}
 				theContextMenu.add(el,[CMENU_CHILD, theUILang.mnuThrottle, down]);
 			}
@@ -170,34 +169,19 @@ if(plugin.canChangeMenu())
 		var req = '';
 		for(var k in sr)
        			if(sr[k] && (k.length==40))
-				req += ("&hash=" + k + "&v="+throttle);
+				req += ("&hash=" + k);
 		if(req.length>0)
-			this.request("?action=setthrottle"+req+"&list=1",[this.addTorrents, this]);
+			this.request("?action=setthrottle&v="+throttle+req+"&list=1",[this.receiveTorrents, this]);
 	}
 
 	rTorrentStub.prototype.setthrottle = function()
 	{
-		for(var i=0; i<this.vs.length; i++)
-		{
-			var needRestart = (theWebUI.torrents[this.hashes[i]].status==theUILang.Seeding) || (theWebUI.torrents[this.hashes[i]].status==theUILang.Downloading);
-			var name = (this.vs[i]>=0) ? "thr_"+this.vs[i] : "";
-			if(needRestart)
-			{
-				cmd = new rXMLRPCCommand('d.stop');
-				cmd.addParameter("string",this.hashes[i]);
-				this.commands.push( cmd );
-			}
-			cmd = new rXMLRPCCommand('d.set_throttle_name');
-			cmd.addParameter("string",this.hashes[i]);
-			cmd.addParameter("string",name);
-			this.commands.push( cmd );
-			if(needRestart)
-			{
-				cmd = new rXMLRPCCommand('d.start');
-				cmd.addParameter("string",this.hashes[i]);
-				this.commands.push( cmd );
-			}
-		}
+		this.content = "apply=1&v="+encodeURIComponent(this.vs[0]);
+		for(var i=0; i<this.hashes.length; i++)
+			this.content += ("&hash%5B%5D="+encodeURIComponent(this.hashes[i]));
+		this.contentType = "application/x-www-form-urlencoded";
+		this.mountPoint = "plugins/throttle/action.php";
+		this.dataType = "script";
 	}
 }
 
@@ -209,33 +193,54 @@ theWebUI.isCorrectThrottle = function(i)
 		(theWebUI.throttles[i].down>=0));
 }
 
-plugin.onLangLoaded = function() 
-{
-	var s = 
-		"<fieldset>"+
-			"<legend>"+theUILang.throttles+"</legend>"+
-			"<div id='st_throttle_h'>"+
-			"<table>"+
-				"<tr>"+
-					"<td><b>"+theUILang.Num_No+"</b></td>"+
-					"<td><b>"+theUILang.channelName+"</b></td>"+
-					"<td><b>"+theUILang.UL+" ("+theUILang.KB+"/"+theUILang.s+")</b></td>"+
-					"<td><b>"+theUILang.DL+" ("+theUILang.KB+"/"+theUILang.s+")</b></td>"+
-				"</tr>";
-	for(var i=0; i<theWebUI.maxThrottle; i++)
-		s +=
-			"<tr>"+
-			        "<td class='alr'><b>"+(i+1)+".</b></td>"+
-				"<td><input type='text' id='thr_name"+i+"' class='TextboxLarge'/></td>"+
-				"<td><input type='text' id='thr_up"+i+"' class='Textbox num' maxlength='6'/></td>"+
-				"<td><input type='text' id='thr_down"+i+"' class='Textbox num' maxlength='6'/></td>"+
-			"</tr>";
-	s+="</table></div></fieldset>";
-	s+="<div class='aright'><label>"+theUILang.channelDefault+":</label><select id='chDefault'><option value='0'>"+theUILang.dontSet+"</option>";
-	for(var i=1; i<=theWebUI.maxThrottle; i++)
-		s+="<option value='"+i+"'>"+i+"</option>";
-	s+="</select></div>";
-	this.attachPageToOptions($("<div>").attr("id","st_throttle").html(s).get(0),theUILang.throttles);
+plugin.onLangLoaded = function() {
+	const s = $("<fieldset>").append(
+		$("<legend>").text(theUILang.throttles),
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12 overflow-x-auto").append(
+				$("<table>").append(
+					$("<thead>").append(
+						$("<tr>").append(
+							...[
+								theUILang.Num_No, theUILang.channelName,
+								theUILang.UL + " (" + theUILang.KB + "/" + theUILang.s + ")",
+								theUILang.DL + " (" + theUILang.KB + "/" + theUILang.s + ")",
+							].map(th => $("<th>").text(th)),
+						),
+					),
+					$("<tbody>").append(
+						...Array.from(Array(theWebUI.maxThrottle).keys()).map(i => $("<tr>").append(
+							$("<td>").append(
+								$("<strong>").text((i + 1) + "."),
+							),
+							$("<td>").append(
+								$("<input>").attr({type:"text", id:`thr_name${i}`}),
+							),
+							$("<td>").append(
+								$("<input>").attr({type:"text", id:`thr_up${i}`, maxlength:6}).addClass("num"),
+							),
+							$("<td>").append(
+								$("<input>").attr({type:"text", id:`thr_down${i}`, maxlength:6}).addClass("num"),
+							),
+						),),
+					),
+				),
+			),
+			$("<div>").addClass("col-12 col-md-6").append(
+				$("<label>").attr({for:"chDefault"}).text(theUILang.channelDefault + ":"),
+			),
+			$("<div>").addClass("col-12 col-md-6").append(
+				$("<select>").attr({id:"chDefault"}).append(
+					$("<option>").val(0).text(theUILang.dontSet),
+					...Array.from(Array(theWebUI.maxThrottle).keys()).map(i => $("<option>").val(i + 1).text(i + 1)),
+				),
+			),
+		),
+	);
+	this.attachPageToOptions(
+		$("<div>").attr("id","st_throttle").append(s)[0],
+		theUILang.throttles,
+	);
 }
 
 plugin.onRemove = function()
@@ -244,5 +249,7 @@ plugin.onRemove = function()
 	theWebUI.getTable("trt").removeColumnById("throttle");
 	if(thePlugins.isInstalled("rss"))
 		theWebUI.getTable("rss").removeColumnById("throttle");
+	if(thePlugins.isInstalled("extsearch"))
+		theWebUI.getTable("teg").removeColumnById("throttle");
 	theRequestManager.removeRequest( "trt", plugin.reqId );
 }

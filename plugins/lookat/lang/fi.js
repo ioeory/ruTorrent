@@ -3,10 +3,10 @@
  *
  * Finnish language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.lookAtDesc = "Find at (Format: name|url)";
- theUILang.lookAt = "Find at";
+ theUILang.lookAtDesc		= "Find at (Format: name|url)";
+ theUILang.lookAt		= "Find at";
 
 thePlugins.get("lookat").langLoaded();

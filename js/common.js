@@ -13,70 +13,21 @@ function $type(obj)
 	return( (obj == undefined) ? false : (obj.constructor == Array) ? "array" : typeof obj );
 }
 
-function browserDetect()
-{
-	var ua = navigator.userAgent.toLowerCase();
-	this.isiOS =  /(iPad|iPhone|iPod)/.test(navigator.userAgent);
-	this.isGecko = (ua.indexOf("gecko") !=- 1 && ua.indexOf("safari") ==- 1);
-	this.isAppleWebKit = (ua.indexOf("webkit") !=- 1);
-	this.isKonqueror = (ua.indexOf("konqueror") !=- 1);
-	this.isOpera = (ua.indexOf("opera") !=- 1);
-	this.isIE = (ua.indexOf("msie") !=- 1 && !this.isOpera && (ua.indexOf("webtv") ==- 1));
-	this.isMozilla = (this.isGecko && ua.indexOf("gecko/") + 14 == ua.length);
-	this.isFirefox = (ua.indexOf("firefox/") !=- 1);
-	this.isChrome = (ua.indexOf("chrome/") !=- 1);
-	this.isMidori = (ua.indexOf("midori/") !=- 1);
-	this.isSafari = (ua.indexOf("safari") !=- 1) && !this.isChrome;
-	this.versionMinor = parseFloat(navigator.appVersion);
-	if(this.isGecko && !this.isMozilla && !this.isKonqueror)
-		this.versionMinor = parseFloat(ua.substring(ua.indexOf("/", ua.indexOf("gecko/") + 6) + 1));
-	else
-	if(this.isMozilla)
-		this.versionMinor = parseFloat(ua.substring(ua.indexOf("rv:") + 3));
-	else
-	if(this.isIE && this.versionMinor >= 4)
-		this.versionMinor = parseFloat(ua.substring(ua.indexOf("msie ") + 5));
-	else
-	if(this.isKonqueror)
-		this.versionMinor = parseFloat(ua.substring(ua.indexOf("konqueror/") + 10));
-	else
-	if(this.isSafari || this.isChrome)
-		this.versionMinor = parseFloat(ua.substring(ua.lastIndexOf("safari/") + 7));
-	else
-	if(this.isOpera)
-		this.versionMinor = parseFloat(ua.substring(ua.indexOf("opera") + 6));
-	if(this.isIE && document.documentMode)
-		this.versionMajor = document.documentMode;
-	else
-		this.versionMajor = parseInt(this.versionMinor);
-
-	this.mode = document.compatMode ? document.compatMode : "BackCompat";
-	this.isIE7x = (this.isIE && this.versionMajor == 7);
-	this.isIE7up = (this.isIE && this.versionMajor >= 7);
-	this.isIE8up = (this.isIE && this.versionMajor >= 8);
-	this.isFirefox3x = (this.isFirefox && this.versionMajor == 3);
-
-	var h = document.getElementsByTagName("html")[0];
-	var c = h.className;
-	if(this.isIE)
-		h.className = "ie" + " ie" + this.versionMajor + " " + c;
-	else
-	if(this.isOpera)
-		h.className = ("opera " + c);
-	else
-	if(this.isKonqueror)
-		h.className = ("konqueror " + c);
-	else
-	if(this.isChrome)
-		h.className = ("webkit chrome " + c);
-	else
-	if(this.isAppleWebKit)
-		h.className = ("webkit safari " + c);
-	else
-	if(this.isGecko)
-		h.className = ("gecko " + c);
-}
 var browser = new browserDetect();
+
+// Two questions the UI asks separately.
+//
+// touchable: can this device deliver touch events? A laptop with a touchscreen
+// answers yes, and still has a mouse and a keyboard.
+//
+// touchPrimary: is touch the way this device is pointed at? That is what to ask
+// wherever the alternative is a hovering cursor or a physical keyboard, and the
+// touchscreen laptop answers no.
+$.extend($.support,
+{
+	touchable: ("ontouchstart" in window) || (navigator.maxTouchPoints > 0),
+	touchPrimary: window.matchMedia("(hover: none) and (pointer: coarse)").matches
+});
 
 $(document).ready(function()
 {
@@ -142,6 +93,7 @@ $.event.fix = function(e)
 {
 	e = $.event.inheritedfix(e);
 	e.fromTextCtrl = (e.target && e.target.tagName && (/^input|textarea|a$/i).test(e.target.tagName));
+	e.maybeSecondaryClick = browser.maybeSecondaryClick(e);
 	if(!e.metaKey)
 		e.metaKey = e.ctrlKey;
 	return(e);
@@ -150,31 +102,46 @@ $.fn.extend(
 {
 	mouseclick: function( handler )
 	{
-		var contextMenuPresent = ("oncontextmenu" in document.createElement("foo")) || browser.isFirefox || $.support.touchable;
+		var contextMenuPresent = ("oncontextmenu" in document.createElement("foo"));
 	        return( this.each( function()
 	        {
 	        	if($type(handler)=="function")
 	        	{
 				if(contextMenuPresent)
 				{
+					// A mousedown that may be a secondary click is not acted on
+					// until the gesture says which click it was.
+					var held = null;
 					$(this).on( "contextmenu", function(e)
 					{
+						held = null;
 						e.which = 3;
 						e.button = 2;
 						e.metaKey = false;	// for safari
 						e.shiftKey = false;	// for safari
                                                 return(handler.apply(this,arguments));
 					});
-                                        $(this).mousedown(function(e)
+                                        $(this).on('mousedown', function(e)
 					{
-						if(e.which != 3)
+						held = null;
+						if(e.which == 3)
+							return;
+						if(!e.maybeSecondaryClick)
 							return(handler.apply(this,arguments));
+						held = { self: this, args: arguments };
+					});
+					$(this).on('mouseup', function(e)
+					{
+						var call = held;
+						held = null;
+						if(call && e.maybeSecondaryClick)
+							return(handler.apply(call.self,call.args));
 					});
 				}
 				else
 				if(browser.isOpera)
 				{
-			        	$(this).mousedown(function(e)
+			        	$(this).on('mousedown', function(e)
 					{
 						if(e.which==3)
 						{
@@ -196,7 +163,7 @@ $.fn.extend(
 						}
 						return(handler.apply(this,arguments));
 					});
-					$(this).mouseup(function(e)
+					$(this).on('mouseup', function(e)
 					{
 						var c = $(this).data("btn");
 						if(c)
@@ -209,12 +176,15 @@ $.fn.extend(
 					});
 				}
 				else
-					$(this).mousedown( handler );
+					$(this).on('mousedown', handler );
 			}
 			else
 			{
 				if(contextMenuPresent)
+				{
 					$(this).off( "contextmenu" );
+					$(this).off( "mouseup" );
+				}
 				else
 				if(browser.isOpera)
 					$(this).off( "mouseup" );
@@ -223,10 +193,10 @@ $.fn.extend(
 		}));
 	},
 
-	enableSysMenu: function()
-	{
-		return(this.on("contextmenu",function(e) { e.stopImmediatePropagation(); }).
-			bind("selectstart",function(e) { e.stopImmediatePropagation(); return(true); }));
+	enableSysMenu: function() {
+		return this
+			.on("contextmenu", (e) => e.stopImmediatePropagation())
+			.on("selectstart", (e) => {e.stopImmediatePropagation(); return true;});
 	},
 
 	setCursorPosition: function(pos)
@@ -250,61 +220,123 @@ $.fn.extend(
 
 function addslashes(str)
 {
+	// eslint-disable-next-line no-control-regex -- intentional: escape NUL, LF and CR
 	return( (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0').replace(/\u000A/g, '\\n').replace(/\u000D/g, '\\r') );
 }
 
-function iv(val)
-{
-	var v = (val==null) ? 0 : parseInt(val + "");
-	return(isNaN(v) ? 0 : v);
+/**
+ * A ruTorrent wrapper to parse an input value as an integer.
+ * @param {any} val Input value to be parsed as an integer.
+ * @returns {number} The parsed result as an integer.
+ */
+function iv(val) {
+	const v = (!val) ? 0 : parseInt(val + "");
+	return isNaN(v) ? 0 : v;
 }
 
-function ir(val)
-{
-	var v = (val==null) ? 0 : parseFloat(val + "");
-	return(isNaN(v) ? 0 : v);
+/**
+ * A ruTorrent wrapper to parse an input value as n float.
+ * @param {any} val Input value to be parsed as a float.
+ * @returns {number} The parsed result as a float.
+ */
+function ir(val) {
+	const v = (!val) ? 0 : parseFloat(val + "");
+	return isNaN(v) ? 0 : v;
 }
 
-function linked(obj, _33, lst)
-{
-	var tn = obj.tagName.toLowerCase();
-	if((tn == "input") && (obj.type == "checkbox"))
+/**
+ * Link the enabled status of a series of HTML elements
+ * with a checkbox or a dropdown select.
+ * @param {HTMLInputElement | HTMLSelectElement} obj The HTML element
+ * to be linked to.
+ * @param {boolean | string} _33 An additional option when linking.
+ *
+ * (1) When linking to a checkbox, a falsey value will enable the linked
+ * objects when the checkbox is checked on.
+ *
+ * (2) When linking to a dropdown select, it should be one of the values
+ * from the options, which will disable the linked elements when selected.
+ * @param {string[]} lst An array of HTML `id`s of elements to be linked.
+ */
+function linked(obj, _33, lst) {
+	const tn = obj.tagName.toLowerCase();
+	if ((tn === "input") && (obj.type === "checkbox"))
 		var d = _33 ? obj.checked : !obj.checked;
-	else
-		if(tn == "select")
-		{
-			var v = obj.options[obj.selectedIndex].value;
-			var d = (v == _33) ? true : false;
-		}
-	for(var i = 0; i < lst.length; i++)
-	{
-		var o = $$(lst[i]);
-		if(o)
-		{
-			o.disabled = d;
-			o = $$("lbl_" + lst[i]);
-			if(o)
-				o.className = (d) ? "disabled" : "";
-		}
-   	}
+	else if (tn === "select") {
+		var v = obj.options[obj.selectedIndex].value;
+		d = (v === _33) ? true : false;
+	} else {
+		return;
+	}
+	lst.forEach(id => {
+		$(`#${id}`).prop({disabled:d});
+		d ? $(`#lbl_${id}`).addClass("disabled") : $(`#lbl_${id}`).removeClass("disabled");
+	});
 }
 
 function escapeHTML(str)
 {
-//	return( $("<div>").text(str).html() );
-	return( String(str).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;') );
+	if (str === null || str === undefined) return '';
+	return String(str)
+		.split('&').join('&amp;')
+		.split('<').join('&lt;')
+		.split('>').join('&gt;')
+		.split('"').join('&quot;')
+		.split("'").join('&#039;');
 }
 
-function askYesNo( title, content, funcYesName )
+/**
+ * Converts HTTP and HTTPS URLs in tracker status messages to safe, clickable HTML links.
+ * Excludes trailing punctuation, brackets, quotes, and backslashes from the link.
+ *
+ * @param {string} text Raw tracker status message
+ * @returns {string} Safe HTML string with clickable links
+ */
+function getClickableTrackerStatus(text)
 {
-	$("#yesnoDlg-header").html(title);
-	$("#yesnoDlg-content").html(content);
-	$("#yesnoOK").off('click');
-	$("#yesnoOK").click( function()
-	{
-		typeof(funcYesName)==="function" ? funcYesName() : eval(funcYesName);
+	if (!text) return '';
+	var sanitized = escapeHTML(text);
+	var linked = sanitized.replace(/https?:\/\/[^\s<>"']+/gi, function(match) {
+		var entityMatch = match.match(/&(?:quot|#039|#39|lt|gt);/i);
+		var truncated = entityMatch ? match.substring(0, entityMatch.index) : match;
+		var cleanUrl = truncated.replace(/[.,)!?:;\\\]}]+$/g, '');
+		var trailing = match.substring(cleanUrl.length);
+		return '<a href="' + cleanUrl + '" target="_blank" rel="noopener noreferrer">' + cleanUrl + '</a>' + trailing;
+	});
+	// A tracker hostname can resolve to both an A and an AAAA record, and
+	// libtorrent announces to one address family at a time. When the first
+	// family fails it stashes the reason, retries the same tracker over the
+	// other family, and if that fails too it reports both joined with ' /// '
+	// (TrackerHttp::receive_failed, src/tracker/tracker_http.cc) -- e.g.
+	// "Tracker: [Could not connect to server /// Could not resolve hostname]"
+	// is IPv4 and IPv6 answering differently about one tracker, not two
+	// trackers. There are only two families, so there are only ever two parts.
+	// Run together they read as a single garbled sentence, so each answer gets
+	// its own line. Done AFTER the linkification: a URL cannot contain a
+	// space, so this separator can never fall inside one of the links just
+	// built.
+	return linked.replace(/ \/\/\/ /g, '<br>');
+}
+
+
+/**
+ * Confirm again before taking action.
+ * @param {string} title Title of the dialog.
+ * @param {string} content Hint of the action to be confirmed.
+ * @param {Function} funcYesName Function to be executed if confirmed. Anything
+ * else is not run, and the question is not asked.
+ */
+function askYesNo(title, content, funcYesName) {
+	if ($type(funcYesName) !== "function") {
+		console.warn("Confirmation action must be a function, not a string: " + funcYesName);
+		return;
+	}
+	$("#yesnoDlg-header").text(title);
+	$("#yesnoDlg-content").text(content);
+	$("#yesnoOK").off('click').on('click', () => {
+		funcYesName();
 		theDialogManager.hide("yesnoDlg");
-		return(false);
+		return false;
 	});
 	theDialogManager.show("yesnoDlg");
 }
@@ -319,7 +351,7 @@ function cloneObject( srcObj )
 		{
 			newObject = new srcObj.constructor();
 			for( var property in srcObj )
-				if( srcObj.hasOwnProperty(property) || typeof( srcObj[property] ) === 'object' )
+				if( Object.prototype.hasOwnProperty.call(srcObj, property) || typeof( srcObj[property] ) === 'object' )
 					newObject[property]= cloneObject( srcObj[property] );
 			break;
        		}
@@ -353,21 +385,7 @@ var theURLs =
 	GetSettingsURL		: "php/getsettings.php",
 	GetPluginsURL		: "php/getplugins.php",
 	GetDonePluginsURL	: "php/doneplugins.php",
-	RIPEURL			: "https://apps.db.ripe.net/search/query.html?searchtext="
-};
-
-var theOptionsSwitcher =
-{
-	current: "st_gl",
-
-	run: function(id)
-	{
-	        $('#'+theOptionsSwitcher.current).hide();
-		$("#mnu_" + theOptionsSwitcher.current).toggleClass("focus");
-		theOptionsSwitcher.current = id;
-	        $('#'+theOptionsSwitcher.current).show();
-		$("#mnu_" + theOptionsSwitcher.current).toggleClass("focus");
-	}
+	IPQUERYURL		: "https://ipinfo.io/"
 };
 
 var theConverter =
@@ -402,7 +420,7 @@ var theConverter =
 		if((noRound==null) && (tm >= 2419200))
 			return "\u221e";
 //		var val = tm % (604800 * 52);
-		var val = tm;
+		var val = Math.max(0, tm);
 		var w = iv(val / 604800);
 		val = val % 604800;
 		var d = iv(val / 86400);
@@ -437,10 +455,9 @@ var theConverter =
 			ret += val + theUILang.time_s;
 		return( ret.substring(0,ret.length-1) );
 	},
-	bytes: function(bt, p)
+	bytes: function(bt, context='other')
 	{
-		p = (p == null) ? 1 : p;
-		var a = new Array(theUILang.bytes, theUILang.KB, theUILang.MB, theUILang.GB, theUILang.TB, theUILang.PB);
+		var a = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
 		var ndx = 0;
 		if(bt == 0)
 			ndx = 1;
@@ -460,7 +477,7 @@ var theConverter =
             			}
 	         	}
 		}
-		return(this.round(bt, p) + " " + a[ndx]);
+		return(this.round(bt, theWebUI.sizeDecimalPlaces(context, a[ndx].toLowerCase())) + " " + theUILang[a[ndx]]);
 	},
 	speed: function(bt)
 	{
@@ -523,6 +540,70 @@ var theConverter =
 	}
 };
 
+var theNormalizer = {
+	encloses: ['[]', '{}', '()'],
+	getLabel(s) {
+		let res;
+		if (s !== null) {
+			for (const enclose of this.encloses) {
+				const o = enclose.substr(0, 1);
+				const c = enclose.substr(1, 1);
+				const re = new RegExp(`^\\${o}(.*?)\\${c}`, 'i');
+				const matches = re.exec(s);
+				if (matches) {
+					res = [matches[1], s.substr(matches[0].length)];
+					break;
+				}
+			}
+		}
+		return res;
+	},
+	clean(s, sortable = true) {
+		if (s !== null && s.length) {
+			if (sortable) {
+				// replace dot, underscore, and dash with whitespace
+				// replace multiple whitespace with single whitespace
+				s = s
+					.replace(/(\.|_|-)/g, ' ')
+					.replace(/\s{2,}/g, ' ');
+			} else {
+				s = s
+					.replace(/^(\.|_|-)/g, ' ')
+					.replace(/(\.|_|-)$/g, ' ');
+			}
+			s = s.trim();
+		}
+		return s;
+	},
+	normalize(s, sortable = true) {
+		if (s !== null) {
+			// get label
+			const label = this.getLabel(s);
+			if (label) {
+				s = label[1];
+			}
+			s = this.clean(s, sortable);
+			if (sortable) {
+				// ignore 'the' in the beginning text
+				if (s.length && s.toLowerCase().substr(0, 3) === 'the') {
+					s = s
+						.substr(3)
+						.trim();
+				}
+			}
+			// append label if necessary
+			if (s.length && label) {
+				s += ` \`${label[0]}\``;
+			}
+			// treat label as string
+			if (s.length === 0 && label) {
+				s = label[0];
+			}
+		}
+		return s;
+	}
+}
+
 var theFormatter =
 {
 	torrents: function(table,arr)
@@ -534,6 +615,11 @@ var theFormatter =
 			else
    			switch(iv(i))
 			{
+				case 0:
+					if (theWebUI.settings["webui.normalize_torrent_name"]) {
+						arr[i] = theNormalizer.normalize(arr[i], false);
+					}
+					break;
 				case 3:
 					arr[i] = (arr[i] / 10) + "%";
 					break;
@@ -541,7 +627,7 @@ var theFormatter =
 				case 4:
 				case 5:
 				case 15:
-					arr[i] = theConverter.bytes(arr[i], 2);
+					arr[i] = theConverter.bytes(arr[i], 'table');
 					break;
 				case 6:
 					arr[i] = (arr[i] ==- 1) ? "\u221e" : theConverter.round(arr[i] / 1000, 3);
@@ -557,7 +643,7 @@ var theFormatter =
 					arr[i] = theFormatter.tPriority(arr[i]);
 					break;
 				case 14:
-					arr[i] = theConverter.date(iv(arr[i])+theWebUI.deltaTime/1000);
+					arr[i] = theConverter.date(iv(arr[i]));
 					break;
 			}
 		}
@@ -704,14 +790,14 @@ var theFormatter =
       					arr[i] = theFormatter.trackerType(arr[i]);
 	      				break;
       				case 'enabled' :
-      				case 'private' : 
+      				case 'private' :
       					arr[i] = theFormatter.yesNo(arr[i]);
       					break;
       				case 'interval' :
 	      				arr[i] = theConverter.time(arr[i]);
       					break;
       				case 'last' :
-	      				arr[i] = iv(arr[i]) ? theConverter.time( $.now()/1000 - iv(arr[i]) - theWebUI.deltaTime/1000,true) : '';
+					arr[i] = arr[i] > 0 ? theConverter.time(arr[i], true) : '';
       					break;
 	      		}
 		}
@@ -750,7 +836,7 @@ var theFormatter =
    			{
       				case 'size' :
       				case 'done' :
-      					arr[i] = theConverter.bytes(arr[i], 2);
+      					arr[i] = theConverter.bytes(arr[i], 'table');
       					break;
 	      			case 'percent' :
       					arr[i] = arr[i] + "%";
@@ -761,16 +847,14 @@ var theFormatter =
 	      		}
 	   	}
 		return(arr);
-	}
+	},
 };
 
 var theSearchEngines =
 {
 	sites:
 	[
-		{ name: 'Mininova', 		url: 'http://www.mininova.org/search/?utorrent&search=' },
 		{ name: 'The Pirate Bay', 	url: 'http://thepiratebay.org/search.php?q=' },
-		{ name: 'IsoHunt', 		url: 'http://isohunt.com/torrents.php?ext=&op=and&ihq=' },
 		{ name: '', 			url: '' },
 		{ name: 'Google', 		url: 'http://google.com/search?q=' }
 	],
@@ -778,14 +862,19 @@ var theSearchEngines =
 
 	run: function()
 	{
-	        if(theSearchEngines.current>=0)
-			window.open(theSearchEngines.sites[theSearchEngines.current].url + $("#query").val(), "_blank");
+		const q = $("#query").val();
+		if(theSearchEngines.current >= 0)
+			openInNewTab(theSearchEngines.sites[theSearchEngines.current].url + encodeURIComponent(q));
 		else
-			theWebUI.setTeg($("#query").val());
+			theWebUI.setTeg(q);
 	},
 	set: function( no, noSave )
 	{
 		theSearchEngines.current = no;
+		if (no !== -1)
+		{
+			theWebUI.categoryList.setQuickSearch(null);
+		}
 		if(!noSave)
 			theWebUI.save();
 	},
@@ -798,15 +887,15 @@ var theSearchEngines =
 				theContextMenu.add([CMENU_SEP]);
 			else
 			if(theSearchEngines.current==ndx)
-				theContextMenu.add([CMENU_SEL, val.name, "theSearchEngines.set("+ndx+")"]);
+				theContextMenu.add([CMENU_SEL, val.name, () => theSearchEngines.set(ndx)]);
 			else
-				theContextMenu.add([val.name, "theSearchEngines.set("+ndx+")"]);
+				theContextMenu.add([val.name, () => theSearchEngines.set(ndx)]);
 		});
 		theContextMenu.add([CMENU_SEP]);
 		if(theSearchEngines.current==-1)
-			theContextMenu.add([CMENU_SEL, theUILang.innerSearch, "theSearchEngines.set(-1)"]);
+			theContextMenu.add([CMENU_SEL, theUILang.innerSearch, () => theSearchEngines.set(-1)]);
 		else
-			theContextMenu.add([theUILang.innerSearch, "theSearchEngines.set(-1)"]);
+			theContextMenu.add([theUILang.innerSearch, () => theSearchEngines.set(-1)]);
 		var offs = $("#search").offset();
 		theContextMenu.show(offs.left-5,offs.top+5+$("#search").height());
         }
@@ -828,40 +917,28 @@ Timer.prototype.stop = function()
 	this.interval = (new Date()).getTime() - this.initial;
 };
 
-var theTabs =
-{
-	tabs:
-	{
-   		gcont : theUILang.General,
-   		FileList : theUILang.Files,
-   		TrackerList : theUILang.Trackers,
-   		PeerList : theUILang.Peers,
-   		Speed : theUILang.Speed,
-   		PluginList : theUILang.Plugins,
-   		lcont : theUILang.Logger
-   	},
+var theTabs = {
+	tabs: {
+		gcont: theUILang.General,
+		FileList: theUILang.Files,
+		TrackerList: theUILang.Trackers,
+		PeerList: theUILang.Peers,
+		Speed: theUILang.Speed,
+		PluginList: theUILang.Plugins,
+		lcont: theUILang.Logger
+  },
 
-   	init: function()
-   	{
-		if(browser.isKonqueror && (browser.versionMajor<4))
-		{
-			delete this.tabs["Speed"];
-			$("#Speed").remove();
-		}
-   		var s = "";
-   		for(var n in this.tabs)
-      			s += "<li id=\"tab_" + n + "\"><a href=\"javascript://void();\" onmousedown=\"theTabs.show('" + n + "'); return(false);\" onfocus=\"this.blur();\">" + this.tabs[n] + "</a></li>";
-		$("#tabbar").html(s);
-		$("#tab_lcont").append( $("<input type='button'>").attr("id","clear_log").addClass('Button').val(theUILang.ClearButton).hide().click( function()
-		{
-			$("#lcont").empty();
-		}).focus( function()
-		{
-			this.blur();
-		}));
-   		this.show("gcont");
-   		$('#gcont,#lcont').enableSysMenu();
-   	},
+	init: function() {
+		$("#tabbar").append(
+			...Object.entries(this.tabs).map(([id, name]) => $("<li>").attr({id:`tab_${id}`}).addClass("nav-item").append(
+				$("<a>").attr({href:"#"}).on(
+					"click", () => theTabs.show(id)
+				).on("click", (ev) => ev.target.blur()).addClass("nav-link").text(name),
+			)),
+		);
+		this.show("gcont");
+		$('#gcont,#lcont').enableSysMenu();
+	},
 	onShow : function(id)
 	{
 	},
@@ -905,74 +982,123 @@ var theTabs =
                				        theWebUI.getTable(prefix).refreshRows();
                				theWebUI.setActiveView(id);
             				l.addClass("selected").css("z-index",1);
-	            			if(n=="lcont")
-		            			$("#clear_log").css("display","inline");
             			}
          			else
          			{
             				p.hide();
             				l.removeClass("selected").css("z-index",0);
-	            			if(n=="lcont")
-		            			$("#clear_log").hide();
             			}
          		}
       		}
    	}
 };
 
-function log(text,noTime,divClass,force)
-{
-	var tm = '';
-	if(!noTime)
-		tm = "[" + theConverter.date(new Date().getTime()/1000) + "]";
+function log(text,noTime,divClass,force) {
+	const tm = noTime ? "" : `[${theConverter.date(new Date().getTime() / 1000)}]`;
 	if(!divClass)
 		divClass = 'std';
-	var obj = $("#lcont");
-	if(obj.length)
-	{
-		obj.append( $("<div>").addClass(divClass).text(tm + " " + text).show() );
+	const obj = $("#lcont");
+	if (obj.length) {
+		obj.append(
+			$("<span>").addClass(divClass).text(tm + " " + text)
+		);
 		obj[0].scrollTop = obj[0].scrollHeight;
 		if(iv(theWebUI.settings["webui.log_autoswitch"]) || force)
 			theTabs.show("lcont");
 	}
 }
 
-function logHTML(text,divClass,force)
-{
-	var obj = $("#lcont");
-	if(!divClass)
-		divClass = 'std';
-	if(obj.length)
-	{
-		obj.append( $("<div>").addClass(divClass).html(text).show() );
-		obj[0].scrollTop = obj[0].scrollHeight;
-		if(iv(theWebUI.settings["webui.log_autoswitch"]) || force)
-			theTabs.show("lcont");
-	}
-}
-
-function noty(msg,status,noTime)
-{
-	if($.noty)
-	{
-		$.noty(
-		{
+function noty(msg, status, noTime) {
+	if ($.noty) {
+		$.noty({
 			text: escapeHTML(msg),
 			layout : 'bottomRight',
 			type: status
 		});
 	}
-	var obj = $("#lcont");
-	if(obj.length)
-	{
-		var tm = '';
-		if(!noTime)
-			tm = "[" + theConverter.date(new Date().getTime()/1000) + "]";
-		obj.append( $("<div>").addClass('std').text(tm + " " + msg).show() );
-		obj[0].scrollTop = obj[0].scrollHeight;
-		if(iv(theWebUI.settings["webui.log_autoswitch"]) && !$.noty)
-			theTabs.show("lcont");
+	const force = iv(theWebUI.settings["webui.log_autoswitch"]) && !$.noty;
+	log(msg, noTime, "std", force);
+}
+
+// An add-torrent upload posts into a hidden frame; this reads what came back.
+// Null means the frame still holds the blank page it was inserted with, which
+// loads before the upload finishes. A failed request leaves the browser's own
+// error page there, and that page is cross-origin: reading it throws, so the
+// answer is empty.
+function uploadFrameAnswer(frame) {
+	var d = null;
+	try {
+		d = frame.contentDocument || frame.contentWindow.document;
+	} catch(e) {}
+	if(d && (d.location.href == "about:blank"))
+		return(null);
+	return((d && d.body) ? (d.body.textContent || d.body.innerText || "") : "");
+}
+
+// php/addtorrent.php answers an upload with a script of noty(text, kind)
+// calls, one per item. Run them against a local noty that collects the pairs
+// rather than reading the text out with a pattern: a batch writes several
+// calls, and the message lookup is spelled either as a dotted key or as
+// theUILang["addTorrent"+"<status>"], depending on the server's version. The
+// server writes every name and kind as an escaped JSON literal, so they stay
+// data; the caller renders them through noty() or the mobile plugin's
+// showAlert(), and both escape.
+// An answer with no call at all is a refusal or a failure -- the origin
+// check's 403, the web server's 413 or 5xx page, a lost connection -- and
+// becomes one error, so an upload never ends without a message.
+function uploadResults(answer) {
+	var results = [];
+	var collect = function(text, kind) {
+		results.push({text: String(text), kind: String(kind)});
+	};
+	// Only lines that start a call run: the renderer writes its calls on one
+	// line, and text printed around them, such as a PHP notice, is not part
+	// of the answer
+	String(answer).split("\n").forEach(function(line) {
+		line = line.trim();
+		if(line.indexOf("noty(") === 0) {
+			try {
+				(new Function("noty", "theUILang", line))(collect, theUILang);
+			} catch(e) {
+				console.error("unreadable add-torrent result:", e);
+			}
+		}
+	});
+	if(!results.length)
+		results.push({text: theUILang.addTorrentFailed, kind: "error"});
+	return(results);
+}
+
+function fallbackCopyToClipboard(text)
+{
+	var textarea = document.createElement("textarea");
+	textarea.textContent = text;
+	textarea.style.position = "fixed";
+	document.body.appendChild(textarea);
+	textarea.select();
+	try {
+		var success = document.execCommand("copy");
+		if(success)
+			noty( theUILang.copyToClipboardSuccess, "success" );
+	} catch (err) {
+		prompt(theUILang.copyToClipboardFailed, text);
+	} finally {
+		document.body.removeChild(textarea);
 	}
+}
+
+function copyToClipboard(text)
+{
+	if (!navigator.clipboard)
+	{
+		fallbackCopyToClipboard(text);
+		return;
+	}
+	navigator.clipboard.writeText(text).then(function() {
+		noty( theUILang.copyToClipboardSuccess, "success" );
+	}, function(err) {
+		fallbackCopyToClipboard(text);
+	});
 }
 
 function rDirectory()
@@ -1008,7 +1134,7 @@ rDirectory.prototype.addFile = function(aData,no)
 		}
 		else
 		{
-			var sId = "_d_"+name;
+			sId = "_d_"+name;
 			if(!this.dirs[file.path][sId])
 				this.dirs[file.path][sId] = { data: { name: file.name, size: 0, done: 0, percent: 0.0, priority: -1, prioritize: -1 }, icon: "Icon_Dir", link: name };
 		}
@@ -1065,16 +1191,21 @@ rDirectory.prototype.updateDirs = function(name)
 	return(allStat);
 }
 
+// A caller can hold an id from a listing that is no longer the current one --
+// a selection that survived a directory change, an event on a row still in the
+// DOM. Answer for what is there rather than throwing.
 rDirectory.prototype.getEntry = function(k)
 {
 	var entry = this.dirs[this.current][k];
+	if(!entry)
+		return(null);
 	return((entry.data.name=="..") ? null : entry.data);
 }
 
 rDirectory.prototype.isDirectory = function(k)
 {
 	var entry = this.dirs[this.current][k];
-	return(entry.link!=null);
+	return(entry ? (entry.link!=null) : false);
 }
 
 rDirectory.prototype.getFilesIds = function(arr,current,k,prt,property)
@@ -1104,57 +1235,50 @@ rDirectory.prototype.setDirectory = function(name)
 	this.current = name;
 }
 
-// -FL10%FF%86-
-// -SM1310-
-
 var theBTClientVersion =
 {
 	azLikeClients4:
 	{
-		"AR" : "Ares", "AT" : "Artemis", "AV" : "Avicora",
-		"BG" : "BTGetit", "BM" : "BitMagnet", "BP" : "BitTorrent Pro (Azureus + Spyware)",
-		"bk" : "BitKitten (libtorrent)", "BS" : "BTSlave",
-		"BW" : "BitWombat", "BX" : "BittorrentX", "EB" : "EBit",
-		"DE" : "Deluge", "DP" : "Propogate Data Client", "FC" : "FileCroc",
-		"FT" : "FoxTorrent/RedSwoosh", "GR" : "GetRight", "HN" : "Hydranode",
-		"LC" : "LeechCraft", "LH" : "LH-ABC", "NX" : "Net Transport",
-		"MO" : "MonoTorrent", "MR" : "Miro", "MT" : "Moonlight",
-		"OT" : "OmegaTorrent", "PD" : "Pando", "QD" : "QQDownload",
-		"RS" : "Rufus", "RT" : "Retriever", "RZ" : "RezTorrent",
-		"SD" : "Xunlei", "SS" : "SwarmScope", "SZ" : "Shareaza",
-		"S~" : "Shareaza beta", "st" : "SharkTorrent", "TN" : "Torrent .NET",
-		"TS" : "TorrentStorm", "UL" : "uLeecher!", "VG" : "Vagaa",
-		"WY" : "Wyzo", "XL" : "Xunlei",
-		"XT" : "XanTorrent", "ZT" : "Zip Torrent",
-		'GS' : "GSTorrent", 'KG' : "KGet", 'ST' : "SymTorrent",
-		'BE' : "BitTorrent SDK", "TB" : "Torch",
-		"FL" : "Flud", "ZO" : "Zona"
+		"AR" : "Ares", "AT" : "Artemis", "AV" : "Avicora", "BE" : "BitTorrent SDK",
+		"BG" : "BTGetit", "BI" : "BiglyBT", "bk" : "BitKitten (libtorrent)",
+		"BM" : "BitMagnet", "BP" : "BitTorrent Pro (Azureus + Spyware)", "BS" : "BTSlave",
+		"BW" : "BitWombat", "BX" : "BittorrentX", "DE" : "Deluge", "DP" : "Propogate Data Client",
+		"EB" : "EBit", "FC" : "FileCroc", "FL" : "Flud", "FT" : "FoxTorrent/RedSwoosh",
+		"GR" : "GetRight", "GS" : "GSTorrent", "GT" : "go.torrent", "HN" : "Hydranode",
+		"JS" : "JSTorrent", "KG" : "KGet", "LC" : "LeechCraft", "LH" : "LH-ABC",
+		"MO" : "MonoTorrent", "MR" : "Miro", "MT" : "Moonlight", "NX" : "Net Transport",
+		"OS" : "OneSwarm", "OT" : "OmegaTorrent", "PD" : "Pando", "QD" : "QQDownload",
+		"RS" : "Rufus", "RT" : "Retriever", "RZ" : "RezTorrent", "SD" : "Xunlei",
+		"S~" : "Shareaza beta", "SS" : "SwarmScope", "st" : "SharkTorrent", "ST" : "SymTorrent",
+		"SZ" : "Shareaza", "TB" : "Torch", "TN" : "Torrent .NET", "TS" : "TorrentStorm",
+		"UL" : "uLeecher!", "UW" : "µTorrent Web", "VG" : "Vagaa", "WY" : "Wyzo",
+		"XF" : "Xfplay", "XL" : "Xunlei", "XT" : "XanTorrent", "ZO" : "Zona", "ZT" : "Zip Torrent"
 	 },
 	azLikeClients3:
 	{
-	        "AG" : "Ares", "A~" : "Ares", "ES" : "Electric Sheep",
-        	"HL" : "Halite", "LT" : "libtorrent (Rasterbar)", "lt" : "libTorrent (Rakshasa)",
-	        "MP" : "MooPolice", "TT" : "TuoTu", "qB" : "qBittorrent",
-       		'MG' : "MediaGet",	// ? -MG1Cr0-
-       		"IL" : "iLivid", "TL" : "Tribler"
+		"A~" : "Ares", "AG" : "Ares", "ES" : "Electric Sheep", "FW" : "FrostWire", "HL" : "Halite",
+		"IL" : "iLivid", "Lr" : "LibreTorrent", "lt" : "libTorrent (Rakshasa)",
+		"LT" : "libtorrent (Rasterbar)", "MG" : "MediaGet", "MP" : "MooPolice", "qB" : "qBittorrent",
+		"SM" : "SoMud", "TL" : "Tribler", "TT" : "TuoTu"
 	},
 	azLikeClients2x2:
 	{
-	        "AX" : "BitPump", "BC" : "BitComet", "CD" : "Enhanced CTorrent", "FX" : "Freebox BitTorrent"
+		"AX" : "BitPump", "BC" : "BitComet", "CD" : "Enhanced CTorrent", "FX" : "Freebox BitTorrent",
+		"WD" : "WebTorrent Desktop", "WW" : "WebTorrent"
 	},
 	azLikeClientsSpec:
 	{
-		'UM' : "uTorrent for Mac", 'UT' : "uTorrent", 'BT' : "BitTorrent", 'TR' : "Transmission",
-		'AZ' : "Azureus", 'KT' : "KTorrent", "BF" : "BitFlu",
-	        'LW' : "LimeWire", "BB" : "BitBuddy", "BR" : "BitRocket",
-		"CT" : "CTorrent", 'XX' : "Xtorrent", 'LP' : "Lphant",
-		"SK" : "Spark", "tT" : "tTorrent"
+		"AZ" : "Azureus", "BB" : "BitBuddy", "BF" : "BitFlu", "BR" : "BitRocket", "BT" : "BitTorrent",
+		"cT" : "CuteTorrent", "CT" : "CTorrent", "FD" : "Free Download Manager",
+		"JT" : "Torrent Downloader (jTorrent)", "jT" : "Torrent Downloader (jTorrent)",
+		"KT" : "KTorrent", "LP" : "Lphant", "LW" : "LimeWire", "PI" : "PicoTorrent", "SK" : "Spark",
+		"TR" : "Transmission", "tT" : "tTorrent", "UM" : "µTorrent for Mac", "UT" : "µTorrent",
+		"XX" : "Xtorrent"
 	},
 	shLikeClients:
 	{
-		'O' : "Osprey ", 'Q' : "BTQueue",
-        	'A' : "ABC", 'R' : "Tribler", 'S' : "Shad0w",
-	        'T': "BitTornado", 'U': "UPnP NAT Bit Torrent"
+		"A" : "ABC", "O" : "Osprey ", "Q" : "BTQueue", "R" : "Tribler", "S" : "Shad0w",
+		"T" : "BitTornado", "U" : "UPnP NAT Bit Torrent"
 	},
 	get: function( origStr )
 	{
@@ -1170,6 +1294,14 @@ var theBTClientVersion =
 		function shChar2( ch )
 		{
 			var codes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-";
+			var loc = codes.indexOf(ch);
+			if(loc<0) loc = 0;
+			return(String(loc));
+		}
+
+		function shChar3( ch )
+		{
+			var codes = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz";
 			var loc = codes.indexOf(ch);
 			if(loc<0) loc = 0;
 			return(String(loc));
@@ -1201,9 +1333,11 @@ var theBTClientVersion =
 						ret = cli;
 						break;
 					case 'BT':
+						ret = cli+" "+shChar2(str.charAt(3))+"."+shChar2(str.charAt(4))+"."+shChar2(str.charAt(5))+getMnemonicEnd(str.charAt(6));
+						break;
 					case 'UT':
 					case 'UM':
-						ret = cli+" "+str.charAt(3)+"."+str.charAt(4)+"."+str.charAt(5)+getMnemonicEnd(str.charAt(6));
+						ret = cli+" "+shChar(str.charAt(3))+"."+shChar(str.charAt(4))+"."+shChar(str.charAt(5))+getMnemonicEnd(str.charAt(6));
 						break;
 					case 'TR':
 						if(str.substr(3,2)=='00')
@@ -1247,13 +1381,26 @@ var theBTClientVersion =
 						ret = cli+" "+shChar(str.charAt(3))+"."+shChar(str.charAt(4))+" ("+parseInt(str.substr(5,2),10)+")";
 						break;
 					case 'LP':
-                                                ret = cli+" "+parseInt(str.substr(3,1),10)+"."+parseInt(str.substr(5,2),10);
+						ret = cli+" "+parseInt(str.substr(3,1),10)+"."+parseInt(str.substr(5,2),10);
 						break;
 					case 'tT':
 						ret = cli+" "+shChar2(str.charAt(3))+"."+shChar2(str.charAt(4))+"."+shChar2(str.charAt(5))+"."+shChar2(str.charAt(6));
 						break;
+					case 'FD':
+						ret = cli+" "+shChar3(str.charAt(3))+"."+shChar3(str.charAt(4))+"."+shChar3(str.charAt(5));
+						break;
+					case 'cT':
+						ret = cli+" "+shChar3(str.charAt(3))+"."+shChar3(str.charAt(4))+"."+shChar3(str.charAt(5))+"."+shChar3(str.charAt(6));
+						break;
+					case 'PI':
+						ret = cli+" "+str.charAt(3)+"."+str.charAt(4)+str.charAt(5)+"."+str.charAt(6);
+						break;
+					case 'JT':
+					case 'jT':
+						ret = cli+" "+str.charAt(3)+"."+str.charAt(4);
+						break;
 					default:
-						var ch = str.charAt(6);
+						ch = str.charAt(6);
 						ret = cli+" "+str.charAt(3)+"."+parseInt(str.substr(4,2),10);
 						if((ch=='Z') || (ch=='X'))
 							ret+='+';
@@ -1281,7 +1428,7 @@ var theBTClientVersion =
 		}
 		if(!ret)
 		{
-			if(str.match(/^[MQ]\d-\d[\-\d][\-\d][\-\d]-/))
+			if(str.match(/^[MQ]\d-\d[-\d][-\d][-\d]-/))
 			{
 				ret = (str.charAt(0)=='Q') ? "Queen Bee " : "BitTorrent ";
 				if(str.charAt(4) == '-')
@@ -1306,6 +1453,9 @@ var theBTClientVersion =
 			else
 			if(str.match(/^-BT/))
 				ret = "BitTorrent "+str.charAt(3)+"."+parseInt(str.substr(4,2),10)+"."+parseInt(str.substr(6,2),10)+getMnemonicEnd(str.charAt(8));
+			else
+			if(str.match(/^-UT/))
+				ret = "µTorrent "+str.charAt(3)+"."+str.charAt(4)+"."+str.charAt(5);
 			else
 			if(str.match(/^-FG\d\d\d\d/))
 				ret = "FlashGet "+parseInt(str.substr(3,2),10)+"."+parseInt(str.substr(5,2),10);
@@ -1352,6 +1502,9 @@ var theBTClientVersion =
 			if(str.match(/^AP/))
 				ret = "AllPeers "+str.substr(2,4);
 			else
+			if(str.match(/^-BL\d\d\d\d\d\d/))
+				ret = "BitCometLite";
+			else
 			if(str.match(/^DNA\d\d\d\d\d\d/))
 				ret = "BitTorrent DNA "+parseInt(str.substr(3,2),10)+"."+parseInt(str.substr(5,2),10)+"."+parseInt(str.substr(7,2),10);
 			else
@@ -1382,6 +1535,9 @@ var theBTClientVersion =
 			if(str.match(/^-WT-/))
 				ret = "BitLet "+str.charAt(4)+"."+str.charAt(5)+"."+str.charAt(6)+"."+str.charAt(7);
 			else
+			if(str.match(/^-?TI?X/))
+				ret = "Tixati "+str.charAt(4)+"."+str.charAt(5)+str.charAt(6);
+			else
 			{
 				var mod = null;
 				if(str.match(/^exbc/))
@@ -1407,9 +1563,9 @@ var theBTClientVersion =
 		}
 		if(!ret)
 		{
-			if(str.match(/^[A-Z]([A-Z0-9\-\.]{1,5})/i))
+			if(str.match(/^[A-Z]([A-Z0-9\-.]{1,5})/i))
 			{
-				var cli = this.shLikeClients[str.charAt(0)];
+				cli = this.shLikeClients[str.charAt(0)];
 				if(cli)
 					ret = cli+" "+shChar(str.charAt(1))+"."+shChar(str.charAt(2))+"."+shChar(str.charAt(3));
 			}
@@ -1426,7 +1582,7 @@ function getCSSRule( selectorText )
 		try {
 		if(document.styleSheets[i].cssRules)
 			crossrule=document.styleSheets[i].cssRules;
-		else 
+		else
 			if(document.styleSheets[i].rules)
 				crossrule=document.styleSheets[i].rules;
 		} catch(e) {}
@@ -1459,7 +1615,7 @@ function RGBackground( selector )
 		var cs;
                 var rule = getCSSRule(selector);
 		if(rule)
-			var cs = rule.style.backgroundColor;
+			cs = rule.style.backgroundColor;
 		else
 			cs = selector;
 		if(cs.charAt(0) == '#')
@@ -1551,40 +1707,30 @@ function getCRC( str, crc )
 	return(crc);
 }
 
-function json_encode(obj)
+/**
+ * Split plain text into DOM nodes, with every http(s) run turned into a link.
+ *
+ * The text is never parsed as markup: non-url runs become text nodes and the
+ * anchors are built attribute by attribute, so nothing the text contains can
+ * become an element or an attribute. The pattern matches only http and https,
+ * which is the scheme allowlist -- no other scheme can reach an href here.
+ */
+function linkifyToNodes(text)
 {
-	switch($type(obj))
+	var nodes = [], pattern = /https?:\/\/[^\s<>"']+/g, last = 0, match;
+	text = (text === null || text === undefined) ? '' : String(text);
+	while((match = pattern.exec(text)) !== null)
 	{
-		case "number":
-			return(String(obj));
-		case "boolean":
-			return(obj ? "1" : "0");
-		case "string":
-			return('"'+addslashes(obj)+'"');
-		case "array":
-		{
-		        var s = '';
-		        $.each(obj,function(key,item)
-		        {
-		                if(s.length)
-                			s+=",";
-		        	s += json_encode(item);
-		        });
-			return("["+s+"]");
-		}
-		case "object":
-		{
-		        var s = '';
-		        $.each(obj,function(key,item)
-		        {
-		                if(s.length)
-                			s+=",";
-		        	s += ('"'+key+'":'+json_encode(item));
-		        });
-			return("{"+s+"}");
-		}
+		if(match.index > last)
+			nodes.push(document.createTextNode(text.substring(last,match.index)));
+		nodes.push($("<a>")
+			.attr({ href: match[0], target: "_blank", rel: "noopener noreferrer" })
+			.text(match[0])[0]);
+		last = pattern.lastIndex;
 	}
-	return("null");
+	if(last < text.length)
+		nodes.push(document.createTextNode(text.substring(last)));
+	return(nodes);
 }
 
 function strip_tags(input, allowed)
@@ -1600,3 +1746,107 @@ function strip_tags(input, allowed)
 		return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
     	});
 }
+
+/**
+ * Whether rtorrent will accept an open files / HTTP connections pair.
+ *
+ * The socket manager hands the configurable categories a fixed budget and
+ * refuses the whole write when a recompute would exceed it, so the pair has to
+ * be checked together rather than field by field.
+ *
+ * @param {number} budget what the two fields may total, 0 when rtorrent does not report it
+ * @param {number} files requested maximum number of open files
+ * @param {number} http requested maximum number of open HTTP connections
+ * @returns {boolean} true when the pair fits, or when there is no budget to check against
+ */
+function socketAllocationFits(budget, files, http)
+{
+	if(!iv(budget))
+		return true;
+	return((iv(files) + iv(http)) <= iv(budget));
+}
+
+/**
+ * Decide whether an address that came from a remote source may be opened.
+ *
+ * javascript: and data: addresses run in this origin, so an address taken from
+ * a feed, a search result or a saved look-at template cannot be handed to
+ * window.open() as it stands. Parsing it the way the browser will and then
+ * allowing only the schemes those sources legitimately use refuses both, along
+ * with every scheme that addresses something other than a web resource.
+ *
+ * @param {*} url the address to check
+ * @returns {boolean} true when it is one of the allowed schemes
+ */
+function isExternalURL(url)
+{
+	// An empty or blank string resolves to the page itself, which is not an
+	// external address at all.
+	if((typeof url !== "string") || (url.trim() === ""))
+		return(false);
+	try {
+		// Resolved against the page, which is what window.open() would do.
+		return(["http:", "https:", "ftp:", "ftps:", "magnet:"]
+			.indexOf(new URL(url, document.baseURI).protocol) >= 0);
+	} catch(e) {
+		return(false);
+	}
+}
+
+/**
+ * Open an address in a new tab that holds no handle back to this one.
+ *
+ * Without "noopener" the page that opens keeps window.opener, and a window
+ * handle carries the right to navigate the window it names whatever origin
+ * holds it. So a feed item, a search destination or an address lookup could
+ * send the tab ruTorrent is logged in to wherever it liked, with nothing shown
+ * to the user but a second tab opening. The feature is what severs that; a
+ * browser too old to know it hands back a window instead of null, and the
+ * handle is cleared on that by hand.
+ *
+ * @param {string} url the address to open
+ * @returns {Window|null} whatever window.open() gave back
+ */
+function openInNewTab(url)
+{
+	const opened = window.open(url, "_blank", "noopener");
+	if(opened)
+	{
+		try { opened.opener = null; } catch(e) {}
+	}
+	return(opened);
+}
+
+/**
+ * Open an address that came from a remote source in a new tab, if it is one
+ * this may open at all.
+ *
+ * The string is handed to window.open() exactly as given rather than in its
+ * parsed form, so nothing about the address is rewritten on the way.
+ *
+ * @param {*} url the address to open
+ * @returns {boolean} true when a tab was asked for, false when it was refused
+ */
+function openExternalURL(url)
+{
+	if(!isExternalURL(url))
+		return(false);
+	openInNewTab(url);
+	return(true);
+}
+
+if (!window.requestIdleCallback) {
+	// monkey patch requestIdleCallback (for Safari)
+	window.requestIdleCallback = function(func, _) {
+		return setTimeout(() => func({didTimeout: true, timeRemaining: () => 0}), 1);
+	};
+	window.cancelIdleCallback = clearTimeout;
+}
+
+// Caveat: doesn't work with Internet Explorer.
+(function setBrowserTimezoneCookie()
+{
+	try {
+		document.cookie = "browser_timezone="+Intl.DateTimeFormat().resolvedOptions().timeZone
+	} catch(e) {}
+}).apply();

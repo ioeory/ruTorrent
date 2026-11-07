@@ -1,17 +1,12 @@
-#Chunks
-{
-	overflow: hidden;
-}
-
 #cCont
 {
 	font-family: fixed;
 	font-size: 12px;
 	overflow: auto;
 	height: 100%
-} 
+}
 
-#cTable 
+#cTable
 {
 	width: 100%;
 	empty-cells: hide;
@@ -19,18 +14,6 @@
 	margin-right: auto;
 	border-collapse: separate;
 	table-layout:fixed;
-}
-
-#cHeader
-{
-	font-size: 11px; 
-	font-family: Tahoma, Arial, Helvetica, sans-serif;
-}
-
-#cHeader .sthdr, #cHeader .stval
-{
-	width: 80px;
-	white-space: nowrap;
 }
 
 .cCell {

@@ -1,30 +1,29 @@
 <?php
 
-require_once( 'theme.php' );
+require_once('theme.php');
 $theme = rTheme::load();
-$jResult.=$theme->get();
+// The stored name arrives as a request parameter, and this is the only place
+// that decides whether it names a real theme. Emit it only once it has passed.
+if (!$theme->isValid()) {
+    $theme->current = '';
+}
+$jResult .= $theme->get();
 
 $themes = "plugin.themes = [";
-if($hth = opendir('../plugins/theme/themes')) 
-{
-	while(false !== ($file = readdir($hth)))
-	{
-		if($file[0] != "." && is_dir('../plugins/theme/themes/'.$file))
-		{
-			if($themes != "plugin.themes = [")
-				$themes.=',';
-			$themes.=("'".$file."'");
-		}
-	}
-	closedir($hth);
+foreach (glob("../plugins/theme/themes/*", GLOB_ONLYDIR) as $path) {
+    if ($themes != "plugin.themes = [") {
+        $themes .= ',';
+    }
+    $name = basename($path);
+    $themes .= ("'" . $name . "'");
 }
-$jResult.=($themes.'];');
+$jResult .= ($themes . '];');
 
-$theSettings->registerPlugin($plugin["name"],$pInfo["perms"]);
+$theSettings->registerPlugin($plugin["name"], $pInfo["perms"]);
 
-if($theme->isValid())
-{
-	$themeInit = "../plugins/theme/themes/".$theme->current."/init.js";
-	if(is_readable($themeInit))
-		$jEnd.=file_get_contents($themeInit);
+if ($theme->isValid()) {
+    $themeInit = "../plugins/theme/themes/" . $theme->current . "/init.js";
+    if (is_readable($themeInit)) {
+        $jEnd .= file_get_contents($themeInit);
+    }
 }

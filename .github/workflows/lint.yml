@@ -1,0 +1,102 @@
+name: lint
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  php-syntax:
+    # Blocking: every PHP file must parse, on every PHP the README supports.
+    # tests/ included: a test that does not parse is a test that does not run,
+    # and nothing else reads those files before CI executes them.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['7.4', '8.1', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: php -l
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            php -l "$f" > /dev/null || { echo "::error file=$f::PHP syntax error"; fail=1; }
+          done < <(find . -type f -name '*.php' -not -path '*/node_modules/*')
+          exit $fail
+
+  php-cs-fixer:
+    # Blocking: PHP follows PER Coding Style 3.0, configured in
+    # .php-cs-fixer.dist.php. The fixer is pinned so a new release cannot
+    # change what passes without a commit.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: php-cs-fixer:3.95.27
+      - name: php-cs-fixer
+        run: php-cs-fixer fix --dry-run --diff --using-cache=no
+
+  editorconfig:
+    # Advisory for now: the existing tree has a backlog of whitespace issues.
+    # The plan is to clear it in small per-file PRs, then make this blocking.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      # editorconfig-checker@7 declares node >=24.14.0. On anything older it
+      # throws out of its own startup before it downloads the checker, and
+      # exits 0 -- a job that reads no file and reports success. Without this
+      # step the runner's default node decides, and it has been older.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: editorconfig-checker
+        # Both halves are pinned on purpose. The wrapper has to be one that
+        # knows the current release asset names as well as the legacy ones,
+        # and EC_VERSION pins the checker it downloads -- left to itself it
+        # takes whatever release is latest, so an upstream change lands here
+        # without a commit.
+        env:
+          EC_VERSION: v4.0.1
+          # The wrapper asks the GitHub API which asset to download. Anonymous,
+          # that request shares one rate limit with every other job on the
+          # runner's address, and when it is spent the step fails before it
+          # reads a file: "API rate limit exceeded ... Failed to download
+          # binary". The workflow token has its own limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx --yes editorconfig-checker@7
+
+  eslint:
+    # Advisory for now (same plan as editorconfig). Covers the jest specs
+    # under tests/ as well as js/ and plugins/.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: install eslint
+        working-directory: tests
+        run: npm ci
+      - name: eslint
+        working-directory: tests
+        run: npm run lint
+
+  phpstan:
+    # Blocking: the tree is at zero level-0 findings and stays there.
+    # See phpstan.neon for what it reads, tests/ included.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: phpstan:2.2.9
+      - name: phpstan
+        run: phpstan analyse --no-progress --memory-limit=512M --error-format=github

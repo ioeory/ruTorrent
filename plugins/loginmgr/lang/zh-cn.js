@@ -3,12 +3,12 @@
  *
  * Chinese Simplified language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.accLogin		= "登录";
+ theUILang.accLogin		= "登录名";
  theUILang.accPassword		= "密码";
- theUILang.accAccounts		= "帐号";
+ theUILang.accAccounts		= "账户";
  theUILang.accAuto		= "自动登录";
  theUILang.acAutoNone		= "否";
  theUILang.acAutoDay		= "每天";

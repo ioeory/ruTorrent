@@ -3,9 +3,10 @@
  *
  * Italian language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.diskNotification = "Warning! The disk is full. rTorrent may not run correctly, and no data will be downloaded until you free some disk space.";
+ theUILang.diskNotification = "Attenzione! Il disco è pieno. rTorrent potrebbe non funzionare correttamente, nessun dato verrà scaricato fino a che non liberi spazio su disco.";
+ theUILang.diskUsage = "%USED%/%TOTAL% (%FREE% free)";
 
 thePlugins.get("diskspace").langLoaded();

@@ -1,7 +1,7 @@
 plugin.loadLang();
 plugin.loadMainCSS();
 
-var thePeersCache = 
+var thePeersCache =
 {
 	MAX_SIZE: 1024,
 	ips: [],
@@ -60,13 +60,13 @@ var thePeersCache =
 };
 
 plugin.config = theWebUI.config;
-theWebUI.config = function(data)
+theWebUI.config = function()
 {
 	if(plugin.canChangeColumns())
 	{
 		if(plugin.retrieveCountry)
 		{
-			this.tables.prs.columns.unshift({text : 'Country', width : '60px', id: 'country', type : TYPE_STRING});
+			this.tables.prs.columns.unshift({text : 'Country', width : '120px', id: 'country', type : TYPE_STRING});
 			plugin.prsFormat = this.tables.prs.format;
 			theWebUI.tables.prs.format = function(table,arr)
 			{
@@ -90,7 +90,7 @@ theWebUI.config = function(data)
 		if(plugin.retrieveComments)
 			this.tables.prs.columns.push({text : 'Comment', width : '200px', id: 'comment', type : TYPE_STRING});
 	}
-	plugin.config.call(this,data);
+	plugin.config.call(this);
 	if((plugin.retrieveCountry || plugin.retrieveComments) && plugin.canChangeColumns())
 		plugin.done();
 }
@@ -109,7 +109,7 @@ rTorrentStub.prototype.getpeersResponse = function(xml)
 		});
 		if(content.length)
 		{
-			var AjaxReq = jQuery.ajax(
+			jQuery.ajax(
 			{
 				type: "POST",
 				contentType: "application/x-www-form-urlencoded",
@@ -137,6 +137,34 @@ rTorrentStub.prototype.getpeersResponse = function(xml)
 
 if(plugin.canChangeColumns())
 {
+	// The Country column stores the two-letter code and shows the localized
+	// name. A string column is sorted by the value it stores, so the code is
+	// mapped to that same name -- any City suffix kept -- before the sorter
+	// compares it, so the column sorts the way it reads.
+	plugin.countrySortValue = function(value)
+	{
+		if(value == null) {
+			return value;
+		}
+		value = "" + value;
+		var name = theUILang.country[value.substr(0,2)];
+		return name ? name + value.substr(2) : value;
+	};
+
+	plugin.installCountrySort = function(table)
+	{
+		table.oldGetSortFunc = table.getSortFunc;
+		table.getSortFunc = function(id, reverse, valMapping)
+		{
+			if(id !== "country") {
+				return this.oldGetSortFunc(id, reverse, valMapping);
+			}
+			return this.oldGetSortFunc(id, reverse, function(key) {
+				return plugin.countrySortValue(valMapping(key));
+			});
+		};
+	};
+
 	plugin.done = function()
 	{
 		if(plugin.allStuffLoaded)
@@ -144,22 +172,8 @@ if(plugin.canChangeColumns())
 			var table = theWebUI.getTable("prs");
 			table.renameColumnById("country",theUILang.countryName);
 			table.renameColumnById("comment",theUILang.commentName);
-			table.oldFilesSortAlphaNumeric = table.sortAlphaNumeric;
-			table.sortAlphaNumeric = function(x, y) 
-			{
-				if(this.getIdByCol(this.sIndex)=="country")
-				{
-				        var newX = { key: x.k, v: x.v, e: x.e };
-			        	var newY = { key: y.k, v: y.v, e: y.e };		
-					if(theUILang.country[x.v])
-						newX.v = theUILang.country[x.v];
-					if(theUILang.country[y.v])
-						newY.v = theUILang.country[y.v];
-					return(this.oldFilesSortAlphaNumeric(newX,newY));
-				}
-				return(this.oldFilesSortAlphaNumeric(x,y));
-			}
-		}       	
+			plugin.installCountrySort(table);
+		}
 		else
 			setTimeout(arguments.callee,1000);
 	}
@@ -170,15 +184,20 @@ if(plugin.canChangeMenu() && plugin.retrieveComments)
 	plugin.createPeerMenu = theWebUI.createPeerMenu;
    	theWebUI.createPeerMenu = function(e, id)
 	{
-		if(plugin.createPeerMenu.call(theWebUI,e,id))
+		if(plugin.createPeerMenu.call(theWebUI, e, id))
 		{
-			var el = theContextMenu.get( theUILang.peerAdd );
-			if(el)
+			if(plugin.enabled && plugin.allStuffLoaded)
 			{
-				theContextMenu.add(el,[theUILang.peerComment+'...', 
-					this.isTorrentCommandEnabled('commentpeer',this.dID) && (theWebUI.getTable("prs").selCount==1) ? "theDialogManager.show('cadd')" : null]);
-				return(true);
+				var el = theContextMenu.get(theUILang.peerAdd);
+				var selCount = theWebUI.getTable("prs").selCount;
+				if(el && selCount)
+				{
+					theContextMenu.add(el, [theUILang.peerComment+'...',
+						(this.isTorrentCommandEnabled('commentpeer',theWebUI.dID) && (selCount==1)) ?
+							() => theDialogManager.show('cadd') : null]);
+				}
 			}
+			return(true);
 		}
 		return(false);
    	}
@@ -203,20 +222,31 @@ if(plugin.canChangeMenu() && plugin.retrieveComments)
    	}
 }
 
-plugin.onLangLoaded = function()
-{
-	if(plugin.retrieveComments)
-	{
-		theDialogManager.make("cadd",theUILang.peerComment,
-			'<div class="content fxcaret">'+theUILang.peerCommentLabel+'<br><input type="text" id="peerComment" class="Textbox" maxlength="64"/></div>'+
-			'<div class="aright buttons-list"><input type="button" class="OK Button" value="'+theUILang.ok+'" onclick="theWebUI.addNewComment();theDialogManager.hide(\'cadd\');return(false);" />'+
-				'<input type="button" class="Cancel Button" value="'+theUILang.Cancel+'"/></div>',
-			true);
+plugin.onLangLoaded = function() {
+	if (plugin.retrieveComments) {
+		const caddContent = $("<div>").addClass("cont").append(
+			$("<fieldset>").append(
+				$("<legend>").text(theUILang.peerCommentLabel),
+				$("<div>").addClass("row").append(
+					$("<div>").addClass("col-12").append(
+						$("<input>").attr({type:"text", id:"peerComment", maxlength:64}),
+					),
+				),
+			),
+		);
+		const caddButtons = $("<div>").addClass("buttons-list").append(
+			$("<button>").attr({type:"button"}).addClass("OK").on("click", () => {theWebUI.addNewComment(); theDialogManager.hide('cadd'); return(false);}).text(theUILang.ok),
+			$("<button>").attr({type:"button"}).addClass("Cancel").text(theUILang.Cancel),
+		);
+		theDialogManager.make("cadd", theUILang.peerComment,
+			[caddContent, caddButtons],
+			true,
+		);
 		theDialogManager.setHandler('cadd','beforeShow',function()
 		{
-			var peer = theWebUI.peers[theWebUI.getTable("prs").getFirstSelected()];
-			plugin.ip = peer.ip;
-			$('#peerComment').val(peer.comment);
+			var table = theWebUI.getTable("prs"); var peerId = table.getFirstSelected();
+			plugin.ip = table.getAttr(peerId, "ip");
+			$('#peerComment').val(table.getValueById(peerId, 'comment') || '');
 		});
 	}
 }
@@ -226,5 +256,5 @@ plugin.onRemove = function()
         if(plugin.retrieveCountry)
 		theWebUI.getTable("prs").removeColumnById("country");
         if(plugin.retrieveComments)
-		theWebUI.getTable("prs").removeColumnById("country");
+		theWebUI.getTable("prs").removeColumnById("comment");
 }

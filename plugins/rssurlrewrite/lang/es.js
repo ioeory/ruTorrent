@@ -3,15 +3,15 @@
  *
  * Spanish language file.
  *
- * Author: 
+ * Author:
  */
 
  theUILang.rssNewRule		= "Nueva regla";
  theUILang.mnu_rssurlrewrite	= "URL de reemplazo en RSS";
- theUILang.rssRulesManager	= "Administrador de Reglas";
+ theUILang.rssRulesManager	= "Administrador de reglas RSS";
  theUILang.rssAddRule		= "Agregar";
  theUILang.rssDelRule		= "Borrar";
- theUILang.rssCheckRule 	= "?";
+ theUILang.rssCheckRule		= "?";
  theUILang.rssRulesLegend	= "Configuración de reglas";
  theUILang.rssSrcHref		= "Si la URL de descarga del torrent conicide con el patrón";
  theUILang.rssSrcGuid		= "Si la URL de descripción del torrent conicide con el patrón";

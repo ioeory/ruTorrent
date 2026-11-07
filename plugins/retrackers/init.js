@@ -4,7 +4,7 @@ plugin.loadLang();
 if(plugin.canChangeOptions())
 {
 	plugin.addAndShowSettings = theWebUI.addAndShowSettings;
-	theWebUI.addAndShowSettings = function(arg) 
+	theWebUI.addAndShowSettings = function(arg)
 	{
 	        if(plugin.enabled)
 	        {
@@ -24,7 +24,7 @@ if(plugin.canChangeOptions())
 			}
 			$('#eretrackers').val(s);
 			s = '';
-			for(var i=0; i<theWebUI.retrackers.todelete.length; i++)
+			for(i=0; i<theWebUI.retrackers.todelete.length; i++)
 			{
 				s+=theWebUI.retrackers.todelete[i];
 				s+='\r\n';
@@ -34,7 +34,7 @@ if(plugin.canChangeOptions())
 		plugin.addAndShowSettings.call(theWebUI,arg);
 	}
 
-	theWebUI.retrackersWasChanged = function() 
+	theWebUI.retrackersWasChanged = function()
 	{
 		if(($$('dont_private').checked!=(theWebUI.retrackers.dontAddPrivate==1)) ||
 			($$('add_begin').checked!=(theWebUI.retrackers.addToBegin==1)))
@@ -44,7 +44,7 @@ if(plugin.canChangeOptions())
 	        var groups = new Array();
 		for(var i = 0; i<arr.length; i++)
 		{
-			var s = $.trim(arr[i]);
+			var s = arr[i].trim();
 			if(s.length)
 				curGroup.push(s);
 			else
@@ -58,32 +58,32 @@ if(plugin.canChangeOptions())
 			groups.push(curGroup);
 		if(groups.length!=theWebUI.retrackers.list.length)
 			return(true);
-		for(var i = 0; i<groups.length; i++)	
+		for(i = 0; i<groups.length; i++)
 		{
 			if(groups[i].length!=theWebUI.retrackers.list[i].length)
 				return(true);
-			for(var j = 0; j<groups[i].length; j++)	
+			for(var j = 0; j<groups[i].length; j++)
 				if(groups[i][j]!=theWebUI.retrackers.list[i][j])
 					return(true);
 		}
 		arr = $('#dretrackers').val().split("\n");
 		var todelete = [];
-		for(var i=0; i<arr.length; i++)
+		for(i=0; i<arr.length; i++)
 		{
-			var s = $.trim(arr[i]);
+			s = arr[i].trim();
 			if(s.length)
 				todelete.push(s);
 		}
 		if(todelete.length!=theWebUI.retrackers.todelete.length)
 			return(true);
-		for(var i=0; i<theWebUI.retrackers.todelete.length; i++)
+		for(i=0; i<theWebUI.retrackers.todelete.length; i++)
 			if(theWebUI.retrackers.todelete[i]!=todelete[i])
 				return(true);
 		return(false);
 	}
 
 	plugin.setSettings = theWebUI.setSettings;
-	theWebUI.setSettings = function() 
+	theWebUI.setSettings = function()
 	{
 		plugin.setSettings.call(this);
 		if(plugin.enabled && this.retrackersWasChanged())
@@ -92,19 +92,19 @@ if(plugin.canChangeOptions())
 
 	rTorrentStub.prototype.setretrackers = function()
 	{
-		this.content = 'dont_private='+($$('dont_private').checked ? '1' : '0') + 
+		this.content = 'dont_private='+($$('dont_private').checked ? '1' : '0') +
 			'&add_begin='+($$('add_begin').checked ? '1' : '0');
 		var arr = $('#eretrackers').val().split("\n");
 		for(var i = 0; i<arr.length; i++)
 		{
-			var s = $.trim(arr[i]);
+			var s = arr[i].trim();
 			if(s.toLowerCase()!='dht://')
 				this.content = 	this.content+"&tracker="+encodeURIComponent(s);
 		}
 		arr = $('#dretrackers').val().split("\n");
-		for(var i = 0; i<arr.length; i++)
+		for(i = 0; i<arr.length; i++)
 		{
-			var s = $.trim(arr[i]);
+			s = arr[i].trim();
 			if(s.length)
 				this.content = 	this.content+"&todelete="+encodeURIComponent(s);
 		}
@@ -114,35 +114,44 @@ if(plugin.canChangeOptions())
 	}
 }
 
-plugin.onLangLoaded = function() 
-{
-	if(this.canChangeOptions())
-	        this.attachPageToOptions(
-		        $("<div>").attr("id","st_retrackers").html(
-				"<div>"+		
-					"<input type='checkbox' id='dont_private' checked='true' />"+
-					"<label for='dont_private'>"+theUILang.dontAddToPrivate+"</label>"+
-				"</div>"+
-				"<fieldset>"+
-					"<legend>"+theUILang.retrackersAdd+"</legend>"+
-					"<div class=\"op100l\">"+
-						"<textarea id='eretrackers' class='retrackers'></textarea>"+
-					"</div>"+
-					"<div class=\"op100l\">"+		
-						"<input type='checkbox' id='add_begin' checked='false' />"+
-						"<label for='add_begin'>"+theUILang.addToBegin+"</label>"+
-					"</div>"+
-				"</fieldset>"+
-				"<fieldset>"+
-					"<legend>"+theUILang.retrackersDel+"</legend>"+
-					"<div class=\"op100l\">"+
-						"<textarea id='dretrackers' class='retrackers'></textarea>"+
-					"</div>"+
-				"</fieldset>"
-				)[0],theUILang.retrackers);
+plugin.onLangLoaded = function() {
+	if (this.canChangeOptions()) {
+		this.attachPageToOptions(
+			$("<div>").attr("id","st_retrackers").append(
+				$("<fieldset>").append(
+					$("<legend>").append(theUILang.retrackers),
+					$("<div>").append(
+						$("<div>").addClass("row").append(
+							$("<div>").addClass("col-12").append(
+								$("<input>").attr({type:"checkbox", id:"dont_private"}).prop("checked", true),
+								$("<label>").attr({for:"dont_private"}).text(theUILang.dontAddToPrivate),
+							),
+							$("<div>").addClass("col-12").append(
+								$("<input>").attr({type:"checkbox", id:"add_begin"}).prop("checked", true),
+								$("<label>").attr({for:"add_begin"}).text(theUILang.addToBegin),
+							),
+							$("<div>").addClass("col-12").append(
+								$("<label>").attr({for:"eretrackers"}).text(theUILang.retrackersAdd),
+							),
+							$("<div>").addClass("col-12").append(
+								$("<textarea>").attr({id:"eretrackers"}).addClass("retrackers"),
+							),
+							$("<div>").addClass("col-12").append(
+								$("<label>").attr({for:"dretrackers"}).text(theUILang.retrackersDel),
+							),
+							$("<div>").addClass("col-12").append(
+								$("<textarea>").attr({id:"dretrackers"}).addClass("retrackers"),
+							),
+						),
+					),
+				),
+			)[0],
+			theUILang.retrackers,
+		);
+	}
 }
 
-plugin.onRemove = function() 
+plugin.onRemove = function()
 {
 	this.removePageFromOptions("st_retrackers");
 }

@@ -6,7 +6,7 @@
  * Author: Chris Kanatas (ckanatas@gmail.com)
  */
 
- theUILang.checkTorrent 	= "Έλεγχος για ενημέρωση";
+ theUILang.checkTorrent		= "Έλεγχος για ενημέρωση";
  theUILang.chkHdr		= "Έλεγχος ενημέρωσης Torrent";
  theUILang.checkedAt		= "Τελευταίος έλεγχος";
  theUILang.checkedResult	= "Αποτέλεσμα";
@@ -17,7 +17,8 @@
  				  "Μάλλον διαγράφηκε",
  				  "Σφάλμα πρόσβασης στον tracker",
  				  "Σφάλμα αλληλεπίδρασης με το rTorrent",
- 				  "Δεν χρειάζεται"
+ 				  "Δεν χρειάζεται",
+ 				  "Αγνοήθηκε"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

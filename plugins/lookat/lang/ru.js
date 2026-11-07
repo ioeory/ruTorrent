@@ -3,10 +3,10 @@
  *
  * Russian language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.lookAtDesc = "Смотреть на (Формат: name|url)";
- theUILang.lookAt = "Смотреть на";
+ theUILang.lookAtDesc		= "Смотреть на (Формат: name|url)";
+ theUILang.lookAt		= "Смотреть на";
 
 thePlugins.get("lookat").langLoaded();

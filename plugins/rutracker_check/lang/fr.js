@@ -6,7 +6,7 @@
  * Author: Nicobubulle (nicobubulle@gmail.com)
  */
 
- theUILang.checkTorrent 	= "Vérifier les MAJ";
+ theUILang.checkTorrent		= "Vérifier les MAJ";
  theUILang.chkHdr		= "Vérification de la MAJ du torrent";
  theUILang.checkedAt		= "Dernière vérification";
  theUILang.checkedResult	= "Resultat";
@@ -17,7 +17,8 @@
  				  "Certainement supprimé",
  				  "Erreur d'accès au tracker",
  				  "Problème d'accès à rTorrent",
- 				  "Pas besoin"
+ 				  "Pas besoin",
+ 				  "Ignoré"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

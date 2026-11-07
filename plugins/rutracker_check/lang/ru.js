@@ -3,10 +3,10 @@
  *
  * Russian language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.checkTorrent 	= "Проверить обновление";
+ theUILang.checkTorrent		= "Проверить обновление";
  theUILang.chkHdr		= "Проверка обновления торрента";
  theUILang.checkedAt		= "Произведена";
  theUILang.checkedResult	= "Результат";
@@ -17,7 +17,8 @@
  				  "Возможно, удален",
  				  "Ошибка доступа к трекеру",
  				  "Ошибка взаимодействия с rTorrent",
- 				  "Нет необходимости"
+ 				  "Нет необходимости",
+ 				  "Игнорируется"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

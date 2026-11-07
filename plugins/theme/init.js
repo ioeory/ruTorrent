@@ -2,24 +2,18 @@ plugin.loadLang();
 if(theWebUI.theme)
 {
 	plugin.path = "plugins/theme/themes/"+theWebUI.theme+"/";
-	plugin.loadCSS("style");
+	plugin.loadCSS("style", () => $(':root').removeClass('pre-theme-load'));
 	plugin.loadCSS("stable");
 
-	plugin.allDone = function()
-	{
+	plugin.allDone = function() {
 		plugin.loadCSS("plugins");
-		$.each(theWebUI.tables, function(ndx,table)
-		{
-			table.obj.setPaletteByURL("plugins/theme/themes/"+theWebUI.theme);
-		});
 	}
 
 	plugin.config = theWebUI.config;
-	theWebUI.config = function(data)
+	theWebUI.config = function()
 	{
-		this.getTable("trt").setPaletteByURL("plugins/theme/themes/"+theWebUI.theme);
 		plugin.loadCSS("plugins");
-		plugin.config.call(this,data);
+		plugin.config.call(this);
 		thePlugins.waitLoad( "thePlugins.get('theme').allDone" );
 	}
 }
@@ -30,10 +24,21 @@ plugin.onLangLoaded = function()
 	for( var i in plugin.themes )
 		themes += '<option value="'+plugin.themes[i]+'"'+(theWebUI.theme==plugin.themes[i] ? 'selected' : '')+'>'+plugin.themes[i]+'</option>';
 	$($$("webui.lang")).parent().after(
-		'<div class="op50l algnright">'+
-		'<label for="webui.theme">'+theUILang.theme+':</label>'+
-		'<select id="webui.theme">'+themes+'</select></div>' );
+		$("<div>").addClass("col-6 col-md-3").append(
+			$("<label>").attr({for: "webui.theme"}).text(theUILang.theme + ": "),
+		),
+		$("<div>").addClass("col-6 col-md-3").append(
+			$("<select>").attr({id: "webui.theme"}).html(themes),
+		),
+	);
 }
+
+plugin.updateThemeHint = function(theme)
+{
+	const dark = !['Blue', 'Excel', ''].includes(theme);
+	if (typeof setThemeHint === "function") setThemeHint(dark);
+}
+plugin.updateThemeHint(theWebUI.theme);
 
 rTorrentStub.prototype.settheme = function()
 {
@@ -49,9 +54,15 @@ theDialogManager.setHandler('stg','beforeShow',function()
 });
 
 plugin.setSettings = theWebUI.setSettings;
-theWebUI.setSettings = function() 
+theWebUI.setSettings = function()
 {
 	plugin.setSettings.call(this);
-	if($($$("webui.theme")).val()!=theWebUI.theme)
-		theWebUI.request("?action=settheme",[theWebUI.reload, theWebUI]);
+	const themeVal = $($$("webui.theme")).val();
+	if(themeVal !== theWebUI.theme)
+	{
+		theWebUI.request("?action=settheme", () => {
+			plugin.updateThemeHint(themeVal);
+			theWebUI.reload();
+		});
+	}
 }

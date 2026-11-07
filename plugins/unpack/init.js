@@ -43,7 +43,7 @@ if(plugin.canChangeMenu())
 				if(thePlugins.isInstalled("quotaspace") && theWebUI.quotaAlreadyWarn)
 					plugin.fno=null;
 				this.uID = (plugin.fno==null) ? null : this.dID;
-				theContextMenu.add( [theUILang.unpack+'...',  (plugin.fno==null) ? null : "theDialogManager.show('dlg_unpack')"] );
+				theContextMenu.add( [theUILang.unpack+'...',  (plugin.fno==null) ? null : () => theDialogManager.show('dlg_unpack')] );
 			}
 			return(true);
 		}
@@ -54,7 +54,7 @@ if(plugin.canChangeMenu())
 	theWebUI.createMenu = function( e, id )
 	{
 		plugin.createMenu.call(this, e, id);
-		if(plugin.enabled)
+		if(plugin.enabled && !theContextMenu.get(theUILang.rssMenuLoad))
 		{
 			plugin.fno = null;
 			plugin.mode = null;
@@ -64,7 +64,7 @@ if(plugin.canChangeMenu())
 		        this.uID = ((this.getTable("trt").selCount == 1) && !(thePlugins.isInstalled("quotaspace") && theWebUI.quotaAlreadyWarn)) ? (id || this.dID) : null;
 			if(this.uID && (this.torrents[this.uID].done==1000) && $type(this.files[this.uID]))
 			{
-				for(var i in this.files[this.uID]) 
+				for(var i in this.files[this.uID])
 				{
 					var file = this.files[this.uID][i];
 					if(plugin.useUnrar && (/.*\.(rar|r\d\d|\d\d\d)$/i).test(file.name))
@@ -75,30 +75,27 @@ if(plugin.canChangeMenu())
 					checked = true;
 				}
 			}
-			theContextMenu.add( [theUILang.unpack+'...',  
-				(this.uID && (this.uID.length==40) && (this.torrents[this.uID].done==1000) && (!checked || rarPresent || zipPresent)) ? 
-				"theDialogManager.show('dlg_unpack')" : null] );
+			theContextMenu.add( [theUILang.unpack+'...',
+				(this.uID && (this.uID.length==40) && (this.torrents[this.uID].done==1000) && (!checked || rarPresent || zipPresent)) ?
+				() => theDialogManager.show('dlg_unpack') : null] );
 		}
 	}
 }
 
-if(plugin.canChangeOptions())
-{
+if (plugin.canChangeOptions()) {
 	plugin.addAndShowSettings = theWebUI.addAndShowSettings;
-	theWebUI.addAndShowSettings = function( arg )
-	{
-        	if(plugin.enabled && plugin.allStuffLoaded)
-	        {
+	theWebUI.addAndShowSettings = function(arg) {
+		if (plugin.enabled && plugin.allStuffLoaded) {
 			$('#unpack_enabled').prop('checked',(theWebUI.unpackData.enabled == 1));
 			$('#unpack_label').prop('checked',(theWebUI.unpackData.addLabel == 1));
 			$('#unpack_name').prop('checked',(theWebUI.unpackData.addName == 1));
 			$('#edit_unpack1').val( theWebUI.unpackData.path );
 			$('#edit_filter').val( theWebUI.unpackData.filter );
-			linked( $$('unpack_enabled'), 0, ['edit_filter'] );
-			if(plugin.btn)
+			linked($$('unpack_enabled'), 0, ['edit_filter', 'edit_unpack1', 'edit_unpack1_btn'] );
+			if (plugin.btn)
 				plugin.btn.hide();
 		}
-		plugin.addAndShowSettings.call(theWebUI,arg);
+		plugin.addAndShowSettings.call(theWebUI, arg);
 	}
 
 	theWebUI.unpackWasChanged = function()
@@ -136,9 +133,9 @@ if(plugin.canChangeOptions())
 theWebUI.unpack = function()
 {
 	theDialogManager.hide('dlg_unpack');
-        theWebUI.startConsoleTask( "unpack", plugin.name, 
-        { 
-        	hash: theWebUI.uID, 
+        theWebUI.startConsoleTask( "unpack", plugin.name,
+        {
+        	hash: theWebUI.uID,
         	dir: $('#edit_unpack').val(),
         	mode: plugin.mode || '',
         	no: plugin.fno || ''
@@ -148,71 +145,74 @@ theWebUI.unpack = function()
         });
 }
 
-plugin.onLangLoaded = function()
-{
+plugin.onLangLoaded = function() {
 	var plg = thePlugins.get("_task");
 	if(!plg.allStuffLoaded)
 		setTimeout(arguments.callee,1000);
-	else
-	{
-		theDialogManager.make( 'dlg_unpack', theUILang.unpack,
-			"<div class='cont fxcaret'>" +
-				"<fieldset>" +
-					"<div>" + theUILang.unpackPath + "</div>" +
-					"<input type='text' id='edit_unpack' class='TextboxLarge' maxlength='200'/>" +
-					"<input type='button' id='btn_unpack' class='Button' value='...' />" +
-				"</fieldset>" +
-			"</div>"+
-			"<div class='aright buttons-list'>" +
-				"<input type='button' value='" + theUILang.ok + "' class='OK Button' " +
-					" onclick='theWebUI.unpack(); return(false);' />" +
-				"<input type='button' value='"+ theUILang.Cancel + "' class='Cancel Button'/>" +
-			"</div>", true);
+	else {
+		const dlgUnpackContent = $("<div>").addClass("cont").append(
+			$("<fieldset>").append(
+				$("<legend>").text(theUILang.unpackPath),
+				$("<div>").addClass("row").append(
+					$("<div>").addClass("col-12 d-flex align-items-center").append(
+						$("<input>").attr({type:"text", id:"edit_unpack", maxlength:200}),
+					),
+				),
+			),
+		);
+		const dlgUnpackButtons = $("<div>").addClass("buttons-list").append(
+			$("<button>").attr({type:"button"}).addClass("OK").on("click", () => {theWebUI.unpack(); return false;}).text(theUILang.ok),
+			$("<button>").attr({type:"button"}).addClass("Cancel").text(theUILang.Cancel),
+		);
+		theDialogManager.make('dlg_unpack', theUILang.unpack,
+			[dlgUnpackContent, dlgUnpackButtons],
+			true,
+		);
 
-		plugin.attachPageToOptions( $("<div>").attr("id","st_unpack").html(
-			"<div>"+
-				"<input id=\"unpack_enabled\" type=\"checkbox\""+
-					" onchange='linked(this, 0, [\"edit_filter\"]);' />"+
-				"<label for=\"unpack_enabled\">"+
-					theUILang.unpackEnabled+
-				"</label>"+
-				"<input type='text' id='edit_filter' class='TextboxMid' maxlength='200'/>" +
-			"</div>"+
-			"<fieldset>"+
-				"<legend>"+theUILang.unpackPath+"</legend>"+
-				"<input type='text' id='edit_unpack1' class='TextboxLarge' maxlength='200'/>" +
-				"<input type='button' id='btn_unpack1' class='Button' value='...' />" +
-			"</fieldset>"+
-			"<fieldset>"+
-				"<legend>"+theUILang.unpackTorrents+"</legend>"+
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='unpack_label'/>"+
-					"<label for='unpack_label'>"+ theUILang.unpackAddLabel +"</label>"+
-				"</div>" +
-				"<div class='checkbox'>" +
-					"<input type='checkbox' id='unpack_name'/>"+
-					"<label for='unpack_name'>"+ theUILang.unpackAddName +"</label>"+
-				"</div>"+
-			"</fieldset>"
-			)[0], theUILang.unpack );
+		plugin.attachPageToOptions(
+			$("<div>").attr({id:"st_unpack"}).append(
+				$("<fieldset>").append(
+					$("<legend>").text(theUILang.unpack),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("col-12").append(
+							$("<input>").attr({type:"checkbox", id:"unpack_enabled", onchange:"linked(this, 0, ['edit_filter', 'edit_unpack1', 'edit_unpack1_btn']);"}),
+							$("<label>").attr({for:"unpack_enabled"}).text(theUILang.unpackEnabled),
+						),
+						$("<div>").addClass("col-12").append(
+							$("<input>").attr({type:"text", id:"edit_filter", maxlength:200}),
+						),
+						$("<div>").addClass("col-12").append(
+							$("<label>").attr({id:"lbl_edit_unpack1", for:"edit_unpack1"}).addClass("disabled").text(theUILang.unpackPath),
+						),
+						$("<div>").addClass("col-12").append(
+							$("<input>").attr({type:"text", id:"edit_unpack1", maxlength:200}),
+						),
+					),
+				),
+				$("<fieldset>").append(
+					$("<legend>").text(theUILang.unpackTorrents),
+					$("<div>").addClass("row").append(
+						...[
+							["unpack_label", theUILang.unpackAddLabel],
+							["unpack_name", theUILang.unpackAddName],
+						].map(([id, text]) => $("<div>").addClass("col-12 col-md-6").append(
+							$("<input>").attr({type:"checkbox", id:id}),
+							$("<label>").attr({for:id}).text(text),
+						)),
+					),
+				),
+			)[0],
+			theUILang.unpack,
+		);
 		$('#edit_unpack').val( theWebUI.unpackData.path );
-		if(thePlugins.isInstalled("_getdir"))
-		{
-			var btn = new theWebUI.rDirBrowser( 'dlg_unpack', 'edit_unpack', 'btn_unpack' );
-			theDialogManager.setHandler('dlg_unpack','afterHide',function()
-			{
-				btn.hide();
-			});
-			if(plugin.canChangeOptions())
-				plugin.btn = new theWebUI.rDirBrowser( 'st_unpack', 'edit_unpack1', 'btn_unpack1' );
-		}
-		else
-		{
-			$('#btn_unpack').remove();
-			$('#btn_unpack1').remove();
+		if (thePlugins.isInstalled("_getdir")) {
+			new theWebUI.rDirBrowser("edit_unpack");
+			if (plugin.canChangeOptions()) {
+				new theWebUI.rDirBrowser("edit_unpack1");
+			}
 		}
 		plugin.markLoaded();
-	}		
+	}
 }
 
 plugin.onRemove = function()
@@ -221,7 +221,7 @@ plugin.onRemove = function()
 	plugin.removePageFromOptions("st_unpack");
 }
 
-plugin.langLoaded = function() 
+plugin.langLoaded = function()
 {
 	if(plugin.enabled)
 		plugin.onLangLoaded();

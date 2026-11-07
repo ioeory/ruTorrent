@@ -3,7 +3,7 @@
  *
  * Chinese Traditional language file.
  *
- * Author: 
+ * Author:
  */
 
  theUILang.ratios		= "Ratio Groups";
@@ -20,7 +20,7 @@
  theUILang.ratioErase		= "Remove";
  theUILang.ratioEraseData	= "Remove data";
  theUILang.maxTime		= "Time";
- theUILang.ratioDefault 	= "Default ratio group";
+ theUILang.ratioDefault		= "Default ratio group";
  theUILang.setThrottleTo	= "Set channel to";
 
 thePlugins.get("ratio").langLoaded();

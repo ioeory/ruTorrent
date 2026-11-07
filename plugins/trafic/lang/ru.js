@@ -3,10 +3,10 @@
  *
  * Russian language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.traf 		= "Трафик";
+ theUILang.traf			= "Трафик";
  theUILang.perDay		= "За сутки";
  theUILang.perMonth		= "За месяц";
  theUILang.perYear		= "За год";

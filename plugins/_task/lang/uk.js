@@ -6,11 +6,14 @@
  * Author: Oleksandr Natalenko (oleksandr@natalenko.name)
  */
 
- theUILang.tskCommand		= "Триває виконання команди…";
+ theUILang.tskCommand		= "Триває виконання команди...";
  theUILang.tskCommandDone	= "Виконання команди завершено.";
  theUILang.tskConsole		= "Консоль";
  theUILang.tskErrors		= "Діагностика";
  theUILang.tskBackground	= "Приховати";
+ theUILang.tskCopy		= "Copy";
+ theUILang.tskLogEmpty		= "Console log is empty.";
+ theUILang.tskSaveLog		= "Save Log";
  theUILang.tskStart		= "Початок";
  theUILang.tskFinish		= "Завершення";
  theUILang.tskElapsed		= "Минуло";

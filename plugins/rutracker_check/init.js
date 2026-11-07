@@ -11,13 +11,13 @@ if(plugin.canChangeMenu())
 			var el = theContextMenu.get( theUILang.Force_recheck );
 			if( el )
 			{
-				theContextMenu.add( el, [theUILang.checkTorrent, 
+				theContextMenu.add( el, [theUILang.checkTorrent,
 					((this.getTable("trt").selCount>1) && this.getHashes('checktorrent')) ||
-					this.isTorrentCommandEnabled("checktorrent",id) ? "theWebUI.perform( 'checktorrent' )" : null] );
+					this.isTorrentCommandEnabled("checktorrent",id) ? () => theWebUI.perform( 'checktorrent' ) : null] );
 			}
 		}
 	}
-		
+
 	rTorrentStub.prototype.checktorrent = function()
 	{
 		this.content = "cmd=check";
@@ -30,7 +30,7 @@ if(plugin.canChangeMenu())
 }
 
 plugin.config = theWebUI.config;
-theWebUI.config = function(data)
+theWebUI.config = function()
 {
 	plugin.reqId1 = theRequestManager.addRequest("trt", theRequestManager.map("d.get_custom=")+"chk-state",function(hash,torrent,value)
 	{
@@ -42,28 +42,23 @@ theWebUI.config = function(data)
 	{
 		torrent.chktime = value;
 	});
-	plugin.config.call(this,data);
+	plugin.config.call(this);
 }
 
 plugin.isTorrentCommandEnabled = theWebUI.isTorrentCommandEnabled;
-theWebUI.isTorrentCommandEnabled = function(act,hash) 
+theWebUI.isTorrentCommandEnabled = function(act,hash)
 {
 	if(act=="checktorrent")
 	{
-		if(!plugin.isTorrentCommandEnabled.call(this,act,hash))
-			return(false);
-		else
-		{
-//			var torrent = this.torrents[hash];
-//			return(torrent.done == 1000);
-return(true);
-		}
+		var regex = '^(http|https)://';
+		return(hash && (hash.length==40) && !(hash.match(regex)));
 	}
+
 	return(plugin.isTorrentCommandEnabled.call(this,act,hash));
 }
 
 plugin.getStatusIcon = theWebUI.getStatusIcon;
-theWebUI.getStatusIcon = function(torrent) 
+theWebUI.getStatusIcon = function(torrent)
 {
 	if(plugin.allStuffLoaded && (torrent.chkstate==4))	// STE_DELETED
 		return(["Status_Error", theUILang.chkResults[torrent.chkstate-1]]);
@@ -84,12 +79,27 @@ theWebUI.updateDetails = function()
 
 plugin.onLangLoaded = function()
 {
-	$("#mainlayout").append( 
-		"<tr id='chkinfo1'><td colspan='6' class='Header'>"+theUILang.chkHdr+"</td></tr>"+
-		"<tr id='chkinfo2'><td nowrap>"+theUILang.checkedAt+":</td>"+
-			"<td><span id='chktime' class='det'></span></td>"+
-			"<td nowrap>"+theUILang.checkedResult+":</td>"+
-			"<td colspan=3><span id='chkresult' class='det'></span></td></tr>" );
+	$("#mainlayout").append(
+		$("<div>").addClass("row Header").append(
+			$("<div>").attr({id:"chkinfo1"}).addClass("col-12").append(
+				$("<span>").text(theUILang.chkHdr),
+			),
+		),
+		$("<div>").addClass("row").append(
+			$("<div>").attr({id:"chkinfo2"}).addClass("col-12 col-md-2").append(
+				$("<span>").addClass("det-hdr").text(theUILang.checkedAt + ": "),
+			),
+			$("<div>").addClass("col-12 col-md-10").append(
+				$("<span>").attr({id:"chktime"}).addClass("det"),
+			),
+			$("<div>").addClass("col-12 col-md-2").append(
+				$("<span>").addClass("det-hdr").text(theUILang.checkedResult + ": "),
+			),
+			$("<div>").addClass("col-12 col-md-10").append(
+				$("<span>").attr({id:"chkresult"}).addClass("det"),
+			),
+		),
+	);
 }
 
 plugin.onRemove = function()

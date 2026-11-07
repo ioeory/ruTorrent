@@ -3,7 +3,7 @@
  *
  * Russian language file.
  *
- * Author: 
+ * Author:
  */
 
  theUILang.ratios		= "Группы ratio";
@@ -20,7 +20,7 @@
  theUILang.ratioErase		= "Удалить";
  theUILang.ratioEraseData	= "Удалить данные";
  theUILang.maxTime		= "Время";
- theUILang.ratioDefault 	= "Группа ratio по умолчанию";
+ theUILang.ratioDefault		= "Группа ratio по умолчанию";
  theUILang.setThrottleTo	= "Установить канал";
 
 thePlugins.get("ratio").langLoaded();

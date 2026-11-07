@@ -3,15 +3,15 @@
  *
  * Swedish language file.
  *
- * Author: Magnus Holm (holmen@brasse.se) 
+ * Author: Magnus Holm (holmen@brasse.se)
  */
 
  theUILang.rssNewRule		= "Ny regel";
  theUILang.mnu_rssurlrewrite	= "URL-ersättare i RSS";
- theUILang.rssRulesManager	= "Regelhanterare";
+ theUILang.rssRulesManager	= "RSS-regelhanterare";
  theUILang.rssAddRule		= "Lägg till";
  theUILang.rssDelRule		= "Ta bort";
- theUILang.rssCheckRule 	= "?";
+ theUILang.rssCheckRule		= "?";
  theUILang.rssRulesLegend	= "Regelinställningar";
  theUILang.rssSrcHref		= "Om URL för torrentnedladdning passar mönster";
  theUILang.rssSrcGuid		= "Om URL i torrentbeskrivning passar mönster";

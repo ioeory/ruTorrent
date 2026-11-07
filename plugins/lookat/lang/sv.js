@@ -3,10 +3,10 @@
  *
  * Swedish language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.lookAtDesc = "Titta på (Format: namn|url)";
- theUILang.lookAt = "Titta på";
+ theUILang.lookAtDesc		= "Titta på (Format: namn|url)";
+ theUILang.lookAt		= "Titta på";
 
 thePlugins.get("lookat").langLoaded();

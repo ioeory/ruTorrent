@@ -1,9 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 	<head>
 		<title></title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" /> 
+		<meta name="referrer" content="same-origin" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
 		<meta http-equiv="cache-control" content="no-cache" />
 		<link href="./images/favicon.ico" rel="SHORTCUT ICON" />
 		<link rel="apple-touch-icon-precomposed" sizes="57x57" href="./images/apple-touch-icon-57x57.png" />
@@ -20,241 +21,290 @@
 		<link rel="icon" type="image/png" href="./images/favicon-16x16.png" sizes="16x16" />
 		<meta name="msapplication-TileColor" content="#FFFFFF" />
 		<meta name="msapplication-TileImage" content="./images/mstile-144x144.png" />
-		<link href="./css/stable.css" rel="stylesheet" type="text/css" />
-		<style type="text/css">
-			@import "./css/style.css";
-		</style>
-		<script type="text/javascript" src="./js/jquery.js"></script>
-		<script type="text/javascript" src="./lang/langs.js"></script>
-		<script type="text/javascript" src="./js/common.js"></script>
-		<script type="text/javascript" src="./js/objects.js"></script>
-		<script type="text/javascript" src="./js/content.js"></script>
-		<script type="text/javascript" src="./js/stable.js"></script>
-		<!--[if lt IE 9]><script type="text/javascript" src="./js/excanvas.js"></script><![endif]-->
-    		<script type="text/javascript" src="./js/jquery.flot.js"></script>
-		<script type="text/javascript" src="./js/graph.js"></script>
-		<script type="text/javascript" src="./js/plugins.js"></script>
-		<script type="text/javascript" src="./js/webui.js"></script>
-		<script type="text/javascript" src="./js/rtorrent.js"></script>
+
+		<link href="./css/bootstrap.min.css?v=5321" rel="stylesheet" type="text/css" />
+		<link href="./css/style.css?v=5321" rel="stylesheet" type="text/css" />
+		<link href="./css/stable.css?v=5321" rel="stylesheet" type="text/css" />
+		<link rel="preload" as="style" href="./css/category-panel.css?v=5321" />
+		<link rel="preload" as="style" href="./css/panel-label.css?v=5321" />
+		<script type="text/javascript" src="./js/jquery.js?v=5321"></script>
+		<script type="text/javascript" src="./js/jquery.flot.js?v=5321"></script>
+		<script type="text/javascript" src="./js/sanitize.js?v=5321"></script>
+		<script type="text/javascript" src="./js/sanitize.config.js?v=5321"></script>
+		<script type="text/javascript" src="./js/custom-elements.js?v=5321"></script>
+		<script type="text/javascript" src="./lang/langs.js?v=5321"></script>
+		<link rel="preload" as="script" href="./js/browser.js?v=5321" />
+		<link rel="preload" as="script" href="./js/common.js?v=5321" />
+		<link rel="preload" as="script" href="./js/objects.js?v=5321" />
+		<link rel="preload" as="script" href="./js/options.js?v=5321" />
+		<link rel="preload" as="script" href="./js/content.js?v=5321" />
+		<link rel="preload" as="script" href="./js/stable.js?v=5321" />
+		<link rel="preload" as="script" href="./js/graph.js?v=5321" />
+		<link rel="preload" as="script" href="./js/plugins.js?v=5321" />
+		<link rel="preload" as="script" href="./js/rtorrent.js?v=5321" />
+		<link rel="preload" as="script" href="./js/webui.js?v=5321" />
+
+		<script>
+			loadUILang(() => {
+				// Load scripts which depend on theUILang to be loaded
+				for (const scriptLinkElement of document.head.querySelectorAll(
+					"link[rel=preload][as=script]"
+				)) {
+					const script = document.createElement("script");
+					script.src = scriptLinkElement.href;
+					script.async = false;
+					document.head.replaceChild(script, scriptLinkElement);
+				}
+			});
+		</script>
+
+		<script type="module" src="./js/backgroundtask.js?v=5321"></script>
+		<script type="module" src="./js/category-list.js?v=5321"></script>
+		<script type="module" src="./js/panel.js?v=5321"></script>
+		<script type="text/javascript" src="./js/category-list-elements.js?v=5321" defer></script>
 	</head>
 	<body>
-		<div id="preload"></div>
-		<div id="cover">
-			<div id="msg"><span id="loadimg">&nbsp;</span><script type="text/javascript"> document.write(theUILang.Loading); </script></div>
+		<div id="preload" class="d-none"></div>
+		<div id="cover" class="w-100 h-100 position-absolute top-0 left-0">
+			<div id="msg" class="w-100 position-relative text-center">
+				<span id="loadimg">&nbsp;</span>
+				<span uilang>Loading</span>
+			</div>
 		</div>
-		<div id="modalbg"></div>
-		<div id="dragmask"></div>
+		<div id="modalbg" class="w-100 h-100 position-absolute"></div>
 		<div id="rs"></div>
-		<div id="sel"></div>
+		<div id="sel" class="position-absolute"></div>
 		<div id="sc"></div>
-		<div id="t"><a id="mnu_add" href="javascript://void();" onclick="theWebUI.showAdd(); return(false);" onfocus="this.blur()" title="Add Torrent...">
-				<div id="add"></div>
-			</a>
-			<div class="TB_Separator"></div>
-			<a id="mnu_remove" href="javascript://void();" onclick="theWebUI.remove(); return(false);" onfocus="this.blur()" title="Remove">
-				<div id="remove"></div>
-			</a>
-			<div class="TB_Separator"></div>
-			<a id="mnu_start" href="javascript://void();" onclick="theWebUI.start(); return(false);" onfocus="this.blur()" title="Start">
-				<div id="start"></div>
-			</a><a id="mnu_pause" href="javascript://void();" onclick="theWebUI.pause(); return(false);" onfocus="this.blur()" title="Pause">
-				<div id="pause"></div>
-			</a><a id="mnu_stop" href="javascript://void();" onclick="theWebUI.stop(); return(false);" onfocus="this.blur()" title="Stop">
-				<div id="stop"></div>
-			</a>
-			<div class="TB_Separator"></div>
-			<a id="mnu_settings" href="javascript://void();" onclick="theWebUI.showSettings(); return(false);" onfocus="this.blur()" title="Settings">
-				<div id="setting"></div>
-			</a>
-			<div class="TB_Separator"></div>
-			<a id="mnu_help" href="javascript://void();" onclick="theDialogManager.toggle('dlgHelp'); return(false);" onfocus="this.blur()" title="Help">
-				<div id="help"></div>
-			</a>
-			<table id='rc' cellpadding="0" cellspacing="0"><tr id='rrow'>
-				<td>
-					<a id="mnu_search" class="top-menu-item" href="javascript://void();" onclick="theSearchEngines.show(); return(false);" onfocus="this.blur()" title="Search">
-						<div id="search" class="top-menu-item"></div>
-					</a>
-				</td>
-				<td>
-					<input type="text" class="TextboxMid" id="query" onfocus="$('#sc').hide();"/>
-				</td>
-				<td>
-					<a id="mnu_go" href="javascript://void();" onclick="theSearchEngines.run(); return(false);" onfocus="this.blur()" title="Go">
-						<div id="go"></div>
-					</a>
-				</td>
-				<td>
-					<div id="ind"></div>
-				</td>
-			</tr></table>
+		<div id="t" class="py-0 navbar navbar-expand-md">
+			<div class="h-100 px-0 container-fluid">
+				<div id="toggler-container" class="d-flex d-md-none">
+					<button class="d-md-none my-2 navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-sidepanel" aria-controls="offcanvas-sidepanel">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">
+							<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/>
+						</svg>
+					</button>
+					<button class="navbar-toggler my-2" type="button" data-bs-toggle="collapse" data-bs-target="#top-menu" aria-controls="top-menu" aria-expanded="false" aria-label="Toggle navigation">
+						<div class="navbar-toggler-icon"></div>
+					</button>
+				</div>
+				<div class="collapse navbar-collapse px-1 py-2 py-md-0" id="top-menu" data-bs-toggle="false">
+					<div class="navbar-nav flex-grow-1">
+						<div class="d-flex flex-row align-items-center flex-wrap flex-md-nowrap">
+							<a id="mnu_add" class="nav-link flex-grow-1" href="#" onclick="theWebUI.showAdd(); return(false);" onfocus="this.blur()" uilangtitle="mnu_add">
+								<div id="add" class="nav-icon"></div>
+							</a>
+							<div class="TB_Separator"></div>
+							<a id="mnu_remove" class="nav-link flex-grow-1" href="#" onclick="theWebUI.removeTorrent(); return(false);" onfocus="this.blur()" uilangtitle="mnu_remove">
+								<div id="remove" class="nav-icon"></div>
+							</a>
+						</div>
+						<div class="TB_Separator"></div>
+						<div class="d-flex flex-row align-items-center flex-wrap flex-md-nowrap">
+							<a id="mnu_start" class="nav-link flex-grow-1" href="#" onclick="theWebUI.start(); return(false);" onfocus="this.blur()" uilangtitle="mnu_start">
+								<div id="start" class="nav-icon"></div>
+							</a>
+							<a id="mnu_pause" class="nav-link flex-grow-1" href="#" onclick="theWebUI.pause(); return(false);" onfocus="this.blur()" uilangtitle="mnu_pause">
+								<div id="pause" class="nav-icon"></div>
+							</a>
+							<a id="mnu_stop" class="nav-link flex-grow-1" href="#" onclick="theWebUI.stop(); return(false);" onfocus="this.blur()" uilangtitle="mnu_stop">
+								<div id="stop" class="nav-icon"></div>
+							</a>
+						</div>
+						<div class="TB_Separator"></div>
+						<a id="mnu_settings" class="nav-link" href="#" onclick="theWebUI.showSettings(); return(false);" onfocus="this.blur()" uilangtitle="mnu_settings">
+							<div id="setting" class="nav-icon"></div>
+						</a>
+						<div class="TB_Separator"></div>
+						<a id="mnu_help" class="nav-link" href="#" onclick="theDialogManager.toggle('dlgHelp'); return(false);" onfocus="this.blur()" uilangtitle="mnu_help">
+							<div id="help" class="nav-icon"></div>
+						</a>
+						<div id="rc" class="ms-0 ms-md-auto d-flex gap-1 flex-row align-items-center">
+							<a id="mnu_search" class="nav-link top-menu-item" href="#" onclick="theSearchEngines.show(); return(false);" onfocus="this.blur()" uilangtitle="mnu_search">
+								<div id="search" class="nav-icon"></div>
+							</a>
+							<input type="text" id="query" onfocus="$('#sc').hide();"/>
+							<a id="mnu_go" class="nav-link" href="#" onclick="theSearchEngines.run(); return(false);" onfocus="this.blur()" uilangtitle="mnu_go">
+								<div id="go" class="nav-icon"></div>
+							</a>
+							<div id="ind" class="flex-shrink-0"></div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
-		<table id="maincont" cellpadding="0" cellspacing="0" summary="layout table">
-			<tr>
-				<td class="uicell" rowspan="3">
-					<div id="CatList">
-						<div class="catpanel" id="pstate" onclick="theWebUI.togglePanel(this); return(false);"><script type="text/javascript"> document.write(theUILang.pnlState); </script></div>
-						<ul id="pstate_cont" class="catpanel_cont">
-							<li id="-_-_-all-_-_-" class="sel cat">
-								<script type="text/javascript"> document.write(theUILang.All); </script> (<span id="-_-_-all-_-_-c">0</span>)</li>
-							<li id="-_-_-dls-_-_-" class="cat">
-								<script type="text/javascript"> document.write(theUILang.Downloading); </script> (<span id="-_-_-dls-_-_-c">0</span>)</li>
-							<li id="-_-_-com-_-_-" class="cat">
-								<script type="text/javascript"> document.write(theUILang.Finished); </script> (<span id="-_-_-com-_-_-c">0</span>)</li>
-							<li id="-_-_-act-_-_-" class="cat">
-								<script type="text/javascript"> document.write(theUILang.Active); </script> (<span id="-_-_-act-_-_-c">0</span>)</li>
-							<li id="-_-_-iac-_-_-" class="cat">
-								<script type="text/javascript"> document.write(theUILang.Inactive); </script> (<span id="-_-_-iac-_-_-c">0</span>)</li>
-							<li id="-_-_-err-_-_-" class="cat">
-								<script type="text/javascript"> document.write(theUILang.Error); </script> (<span id="-_-_-err-_-_-c">0</span>)</li>
-						</ul>
-						<div class="catpanel" id="plabel" onclick="theWebUI.togglePanel(this); return(false);"><script type="text/javascript"> document.write(theUILang.Labels); </script></div>
-						<div class="catpanel_cont" id="plabel_cont">
-							<ul>
-							<li id="-_-_-nlb-_-_-" class="cat">
-								<script type="text/javascript"> document.write(theUILang.No_label); </script> (<span id="-_-_-nlb-_-_-c">0</span>)</li>
-							</ul>
-							<ul id="lbll">
-							</ul>
+		<div id="maincont" class="d-flex flex-row align-items-stretch">
+			<div class="offcanvas-md offcanvas-start" tabindex="-1" id="offcanvas-sidepanel" aria-labelledby="offcanvas-sidepanel-label">
+				<div class="offcanvas-header">
+					<h4 class="offcanvas-title" id="offcanvas-sidepanel-label"></h4>
+					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#offcanvas-sidepanel" aria-label="Close"></button>
+				</div>
+				<div class="p-1 p-md-0 offcanvas-body">
+					<template id="panel-label-template">
+						<link href="./css/panel-label.css?v=5321" rel="stylesheet" type="text/css" />
+						<div part="prefix" hidden></div>
+						<div part="icon"></div>
+						<div part="text"></div>
+						<div part="count">0</div>
+						<div part="separator">/</div>
+						<div part="size" style="display: none;"></div>
+					</template>
+					<template id="category-panel-template">
+						<link href="./css/category-panel.css?v=5321" rel="stylesheet" type="text/css" />
+						<div part="heading">
+							<span class="text"></span><slot name="decorator" class="decorator"></slot>
 						</div>
-						<div class="catpanel" id="flabel" onclick="theWebUI.togglePanel(this); return(false);"><script type="text/javascript"> document.write(theUILang.mnu_search); </script></div>
-						<div class="catpanel_cont" id="flabel_cont">
-							<ul id="lblf">
-							</ul>
-						</div>
-					</div>
-				</td>
-				<td class="uicell" rowspan="3">
-					<div id="HDivider"></div><div id="dividerDrag"></div>
-				</td>
-				<td class="uicell">
-					<div id="List" class="table_tab"></div>
-				</td>
-			</tr>
-			<tr>
-				<td class="uicell">
-					<div id="VDivider"></div>
-				</td>
-			</tr>
-			<tr>
-				<td class="uicell">
-					<div id="tdetails">
-						<ul id="tabbar" class="tabbar">
-						</ul>
-						<div id="tdcont">
-							<div id="gcont" class="tab">
-								<table cellpadding="5" cellspacing="2" width="100%" summary="layout table" id="mainlayout">
-									<tr>
-										<td colspan="6" class="Header">
-											<script type="text/javascript"> document.write(theUILang.Transfer); </script></td>
-									</tr>
-									<tr>
-										<td width="6%" nowrap><script type="text/javascript"> document.write(theUILang.Time_el); </script>:</td><td width="11%" nowrap><span id="et" class="det"></span></td>
-										<td width="6%" nowrap><script type="text/javascript"> document.write(theUILang.Remaining); </script>:</td><td width="11%" nowrap><span id="rm" class="det"></span></td>
-										<td width="6%" nowrap><script type="text/javascript"> document.write(theUILang.Share_ratio); </script>:</td><td width="11%" nowrap><span id="ra" class="det"></span></td>
-									</tr>
-									<tr>
-										<td width="6%" nowrap><script type="text/javascript"> document.write(theUILang.Downloaded); </script>:</td><td width="11%" nowrap><span id="dl" class="det"></span></td>
-										<td width="6%" nowrap><script type="text/javascript"> document.write(theUILang.Down_speed); </script>:</td><td width="11%" nowrap><span id="ds" class="det"></span></td>
-										<td width="6%" nowrap><script type="text/javascript"> document.write(theUILang.Wasted); </script>:</td><td width="11%" nowrap><span id="wa" class="det"></span></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Uploaded); </script>:</td><td nowrap><span id="ul" class="det"></span></td>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Ul_speed); </script>:</td><td nowrap><span id="us" class="det"></span></td>
-										<td nowrap>&nbsp;</td><td nowrap>&nbsp;</td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Seeds); </script>:</td><td nowrap><span id="se" class="det"></span></td>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Peers); </script>:</td><td nowrap><span id="pe" class="det"></span></td>
-										<td nowrap>&nbsp;</td><td>&nbsp;</td>
-									</tr>
-									<tr>
-										<td colspan="6" class="Header">
-											<script type="text/javascript"> document.write(theUILang.Tracker); </script></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Track_URL); </script>:</td>
-										<td colspan="5" nowrap><span id="tu" class="det"></span></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Track_status); </script>:</td>
-										<td colspan="5" nowrap><span id="ts" class="det"></span></td>
-									</tr>
-									<tr>
-										<td colspan="6" class="Header">
-											<script type="text/javascript"> document.write(theUILang.General); </script></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Save_as); </script>:</td>
-										<td colspan="5" nowrap><span id="bf" class="det"></span></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Free_Disk_Space); </script>:</td>
-										<td colspan="5" nowrap><span id="dsk" class="det"></span></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Created_on); </script>:</td>
-										<td colspan="5" nowrap><span id="co" class="det"></span></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Hash); </script>:</td>
-										<td colspan="5" nowrap><span id="hs" class="det"></span></td>
-									</tr>
-									<tr>
-										<td nowrap><script type="text/javascript"> document.write(theUILang.Comment); </script>:</td>
-										<td colspan="5"><span id="cmt" class="det"></span></td>
-									</tr>
-								</table>
+						<slot name="content"></slot>
+					</template>
+					<category-list id="CatList">
+						<category-panel id="pview" uilangtext="pnlViews">
+							<input slot="decorator" class="Button" type="button" value="+" uilangtitle="SaveCurrentView" id="pview_save_view_button" />
+							<panel-label id="pview_all" icon="all" uilangtext="All" selected></panel-label>
+						</category-panel>
+						<category-panel id="pstate" uilangtext="pnlState">
+							<panel-label id="pstate_all" icon="all" uilangtext="All" selected></panel-label>
+							<panel-label id="-_-_-dls-_-_-" icon="down" uilangtext="Downloading"></panel-label>
+							<panel-label id="-_-_-com-_-_-" icon="completed" uilangtext="Finished"></panel-label>
+							<panel-label id="-_-_-wfa-_-_-" icon="inactive" uilangtext="Stopped"></panel-label>
+							<panel-label id="-_-_-act-_-_-" icon="up-down" uilangtext="Active"></panel-label>
+							<panel-label id="-_-_-iac-_-_-" icon="paused" uilangtext="Inactive"></panel-label>
+							<panel-label id="-_-_-err-_-_-" icon="error" uilangtext="Error"></panel-label>
+						</category-panel>
+						<category-panel id="plabel" uilangtext="Labels">
+							<panel-label id="plabel_all" icon="all" uilangtext="All" selected></panel-label>
+							<panel-label id="-_-_-nlb-_-_-" icon="no-label" uilangtext="No_label"></panel-label>
+						</category-panel>
+						<category-panel id="psearch" uilangtext="mnu_search">
+							<panel-label id="psearch_all" icon="all" uilangtext="All" selected></panel-label>
+						</category-panel>
+					</category-list>
+				</div>
+			</div>
+			<div id="HDivider" class="p-0 m-0"></div>
+			<div id="main-info" class="d-flex flex-column align-items-stretch flex-grow-1 flex-shrink-1 overflow-hidden">
+				<div id="list-table">
+					<div id="List"></div>
+				</div>
+				<div id="VDivider" class="p-0 m-0"></div>
+				<div id="tdetails">
+					<ul id="tabbar" class="tabbar nav nav-tabs m-0 p-0 flex-grow-0 flex-shrink-0 overflow-x-auto overflow-y-hidden flex-nowrap"></ul>
+					<div id="tdcont" class="p-1 flex-grow-1 flex-shrink-1 overflow-auto">
+						<div id="gcont" class="tab">
+							<div id="mainlayout" class="container-fluid">
+								<div class="row Header">
+									<div class="col-12"><span uilang>Transfer</span></div>
+								</div>
+								<div class="row">
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Time_el</span>:</div>
+									<div class="col-6 col-md-2"><span id="et" class="det"></span></div>
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Remaining</span>:</div>
+									<div class="col-6 col-md-2"><span id="rm" class="det"></span></div>
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Share_ratio</span>:</div>
+									<div class="col-6 col-md-2"><span id="ra" class="det"></span></div>
+								</div>
+								<div class="row">
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Downloaded</span>:</div>
+									<div class="col-6 col-md-2"><span id="dl" class="det"></span></div>
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Down_speed</span>:</div>
+									<div class="col-6 col-md-2"><span id="ds" class="det"></span></div>
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Wasted</span>:</div>
+									<div class="col-6 col-md-2"><span id="wa" class="det"></span></div>
+								</div>
+								<div class="row">
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Uploaded</span>:</div>
+									<div class="col-6 col-md-2"><span id="ul" class="det"></span></div>
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Ul_speed</span>:</div>
+									<div class="col-6 col-md-2"><span id="us" class="det"></span></div>
+								</div>
+								<div class="row">
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Seeds</span>:</div>
+									<div class="col-6 col-md-2"><span id="se" class="det"></span></div>
+									<div class="col-6 col-md-2"><span class="det-hdr" uilang>Peers</span>:</div>
+									<div class="col-6 col-md-2"><span id="pe" class="det"></span></div>
+								</div>
+								<div class="row Header">
+									<div class="col-12"><span uilang>Tracker</span></div>
+								</div>
+								<div class="row">
+									<div class="col-12 col-md-2"><span class="det-hdr" uilang>Track_URL</span>:</div>
+									<div class="col-12 col-md-10"><span id="tu" class="det"></span></div>
+									<div class="col-12 col-md-2"><span class="det-hdr" uilang>Track_status</span>:</div>
+									<div class="col-12 col-md-10"><span id="ts" class="det"></span></div>
+								</div>
+								<div class="row Header">
+									<div class="col-12"><span uilang>General</span></div>
+								</div>
+								<div class="row">
+									<div class="col-12 col-md-2"><span class="det-hdr" uilang>Save_as</span>:</div>
+									<div class="col-12 col-md-10"><span id="bf" class="det"></span></div>
+									<div class="col-12 col-md-2"><span class="det-hdr" uilang>Free_Disk_Space</span>:</div>
+									<div class="col-12 col-md-10"><span id="dsk" class="det"></span></div>
+									<div class="col-12 col-md-2"><span class="det-hdr" uilang>Created_on</span>:</div>
+									<div class="col-12 col-md-10"><span id="co" class="det"></span></div>
+									<div class="col-12 col-md-2"><span class="det-hdr" uilang>Hash</span>:</div>
+									<div class="col-12 col-md-10"><span id="hs" class="det"></span></div>
+									<div class="col-12 col-md-2"><span class="det-hdr" uilang>Comment</span>:</div>
+									<div class="col-12 col-md-10"><span id="cmt" class="det"></span></div>
+								</div>
 							</div>
-							<div id="FileList" class="table_tab"></div>
-							<div id="TrackerList" class="table_tab"></div>
-							<div id="PeerList" class="table_tab"></div>
-							<div id="Speed" class="graph_tab"></div>
-							<div id="PluginList" class="table_tab"></div>
-							<div id="lcont" class="tab"></div>
+						</div>
+						<div id="FileList" class="table_tab"></div>
+						<div id="TrackerList" class="table_tab"></div>
+						<div id="PeerList" class="table_tab"></div>
+						<div id="Speed" class="graph_tab"></div>
+						<div id="PluginList" class="table_tab"></div>
+						<div id="lcont" class="tab">
+							<button type="button" id="clear_log" uilangtitle="ClearButton">
+								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-eraser" viewBox="0 0 16 16">
+									<path d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm2.121.707a1 1 0 0 0-1.414 0L4.16 7.547l5.293 5.293 4.633-4.633a1 1 0 0 0 0-1.414zM8.746 13.547 3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"/>
+								</svg>
+							</button>
 						</div>
 					</div>
-				</td>
-			</tr>
-			<tr>
-				<td class="uicell" colspan=3>
-					<div id="StatusBar">
-					<table cellpadding="0" cellspacing="0">
-					        <tr id="firstStatusRow">
-							<td>
-							        <table id="st_up" class="statuscell" cellpadding="0" cellspacing="0">
-							        	<tr>
-										<td><div class="sthdr"><script type="text/javascript"> document.write(theUILang.Speed); </script>:</div></td><td><div class="stval" id="stup_speed"></div></td>
-										<td><div class="sthdr"><script type="text/javascript"> document.write(theUILang.limit); </script>:</div></td><td><div class="stval" id="stup_limit"></div></td>
-										<td><div class="sthdr"><script type="text/javascript"> document.write(theUILang.Total); </script>:</div></td><td><div class="stval" id="stup_total"></div></td>
-									</tr>
-								</table>
-							</td>
-							<td>
-							        <table id="st_down" class="statuscell" cellpadding="0" cellspacing="0">
-							        	<tr>
-										<td><div class="sthdr"><script type="text/javascript"> document.write(theUILang.Speed); </script>:</div></td><td><div class="stval" id="stdown_speed"></div></td>
-										<td><div class="sthdr"><script type="text/javascript"> document.write(theUILang.limit); </script>:</div></td><td><div class="stval" id="stdown_limit"></div></td>
-										<td><div class="sthdr"><script type="text/javascript"> document.write(theUILang.Total); </script>:</div></td><td><div class="stval" id="stdown_total"></div></td>
-									</tr>
-								</table>
-							</td>
-							<td>
-							        <table id="st_system" class="statuscell" cellpadding="0" cellspacing="0">
-							        	<tr>
-										<td><div class="sthdr">rTorrent:</div></td><td><div class="stval" id="rtorrentv"></div></td>
-									</tr>
-								</table>
-							</td>
-							<td class="statuscell">
-								<div class="stval" id="servertime"></div>
-							</td>
-							<td width=100%></td>
-						</tr>
-					</table>
-					</div>
-				</td>
-			</tr>
-		</table>
+				</div>
+			</div>
+		</div>
+		<div id="StatusBar" class="overflow-x-auto">
+			<div id="st_up" class="status-cell">
+				<div class="icon"></div>
+				<div class="sthdr d-none d-lg-block"><span uilang>Speed</span>:</div>
+				<div class="stval" id="stup_speed"></div>
+				<div class="sthdr d-none d-lg-block"><span uilang>limit</span>:</div>
+				<div class="stval d-none d-lg-block" id="stup_limit"></div>
+				<div class="sthdr d-none d-lg-block"><span uilang>Total</span>:</div>
+				<div class="stval d-none d-lg-block" id="stup_total"></div>
+			</div>
+			<div id="st_down" class="status-cell">
+				<div class="icon"></div>
+				<div class="sthdr d-none d-lg-block"><span uilang>Speed</span>:</div>
+				<div class="stval" id="stdown_speed"></div>
+				<div class="sthdr d-none d-lg-block"><span uilang>limit</span>:</div>
+				<div class="stval d-none d-lg-block" id="stdown_limit"></div>
+				<div class="sthdr d-none d-lg-block"><span uilang>Total</span>:</div>
+				<div class="stval d-none d-lg-block" id="stdown_total"></div>
+			</div>
+			<div id="st_fd" class="status-cell">
+				<div class="sthdr d-none d-lg-block"><span uilang>Open_label</span>:</div>
+				<div class="stval" id="stopen_http_count"></div>
+				<div class="stval" id="stopen_sock_count"></div>
+				<div class="stval" id="stopen_fd_count"></div>
+			</div>
+			<div class="status-cell d-none d-md-flex">
+				<div class="sthdr">rTorrent:</div>
+				<div class="stval" id="rtorrentv"></div>
+			</div>
+			<div class="status-cell d-none d-md-flex">
+				<div class="sthdr"><span uilang>Torrents</span>:</div>
+				<div class="stval" id="viewrows"></div>
+				<div class="stval" id="viewrows_size"></div>
+			</div>
+			<div class="status-cell ms-auto d-none d-lg-flex">
+				<div class="stval" id="servertime"></div>
+			</div>
+		</div>
+		<div class="graph_tab_grid"></div>
+		<div class="graph_tab_legend"></div>
+		<div id="dialog-container"></div>
+		<div id="dir-container"></div>
+		<script type="text/javascript" src="./js/bootstrap.bundle.min.js?v=5321"></script>
 	</body>
 </html>

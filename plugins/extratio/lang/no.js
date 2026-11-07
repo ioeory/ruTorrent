@@ -6,7 +6,7 @@
  * Author: nirosa (nirosax@gmail.com)
  */
 
- theUILang.ratioRulesManager	= "Regelbehandling";
+ theUILang.ratioRulesManager	= "Ratioregelbehandling";
  theUILang.mnu_ratiorule	= "Ratioregler";
  theUILang.ratAddRule		= "Legg til";
  theUILang.ratDelRule		= "Slett";
@@ -18,8 +18,9 @@
  theUILang.ratTrackerPublic	= "Alle torrentens trackere er offentlige";
  theUILang.ratTrackerPrivate	= "En av torrentens trackere er privat";
  theUILang.ratioThenLegend	= "Så";
+ theUILang.ratShortcutLegend	= "Keyboard Shortcuts";
  theUILang.setRatioTo		= "Sett ratio til";
- theUILang.setChannelTo 	= "Sett regulering til";
- theUILang.ratioNewRule 	= "Ny regel";
+ theUILang.setChannelTo		= "Sett regulering til";
+ theUILang.ratioNewRule		= "Ny regel";
 
 thePlugins.get("extratio").langLoaded();

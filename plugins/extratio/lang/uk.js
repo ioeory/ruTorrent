@@ -6,7 +6,7 @@
  * Author: Oleksandr Natalenko (oleksandr@natalenko.name)
  */
 
- theUILang.ratioRulesManager	= "Менеджер правил";
+ theUILang.ratioRulesManager	= "Менеджер правил коефіцієнта";
  theUILang.mnu_ratiorule	= "Правила коефіцієнта";
  theUILang.ratAddRule		= "Додати";
  theUILang.ratDelRule		= "Видалити";
@@ -18,8 +18,9 @@
  theUILang.ratTrackerPublic	= "Усі трекери завантаження публічні";
  theUILang.ratTrackerPrivate	= "Один із трекерів завантаження приватний";
  theUILang.ratioThenLegend	= "То";
+ theUILang.ratShortcutLegend	= "Keyboard Shortcuts";
  theUILang.setRatioTo		= "Установити коефіцієнт";
- theUILang.setChannelTo 	= "Установити канал";
- theUILang.ratioNewRule 	= "Нове правило";
+ theUILang.setChannelTo		= "Установити канал";
+ theUILang.ratioNewRule		= "Нове правило";
 
 thePlugins.get("extratio").langLoaded();

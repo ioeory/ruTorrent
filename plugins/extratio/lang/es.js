@@ -3,10 +3,10 @@
  *
  * Spanish language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.ratioRulesManager	= "Administrador de reglas";
+ theUILang.ratioRulesManager	= "Administrador de reglas de ratio";
  theUILang.mnu_ratiorule	= "Reglas de ratio";
  theUILang.ratAddRule		= "Agregar";
  theUILang.ratDelRule		= "Borrar";
@@ -18,8 +18,9 @@
  theUILang.ratTrackerPublic	= "Todos los trackers son públicos";
  theUILang.ratTrackerPrivate	= "Uno de los trackers es privado";
  theUILang.ratioThenLegend	= "Entonces";
+ theUILang.ratShortcutLegend	= "Keyboard Shortcuts";
  theUILang.setRatioTo		= "setear ratio a";
- theUILang.setChannelTo 	= "Setear acelerador a";
- theUILang.ratioNewRule 	= "Nueva regla";
+ theUILang.setChannelTo		= "Setear acelerador a";
+ theUILang.ratioNewRule		= "Nueva regla";
 
 thePlugins.get("extratio").langLoaded();

@@ -3,17 +3,17 @@
  *
  * English language file.
  *
- * Author: 
+ * Author:
  */
 
  theUILang.exFFMPEG		= "Screenshots";
- theUILang.exFrameWidth 	= "Frame width";
- theUILang.exFramesCount	= "Frames count";
+ theUILang.exFrameWidth		= "Frame width";
+ theUILang.exFramesCount	= "Frame count";
  theUILang.exStartOffset	= "Start frame offset";
  theUILang.exBetween		= "Time between frames";
  theUILang.exSave		= "Save";
  theUILang.exSaveAll		= "Save all";
- theUILang.exScreenshot 	= "Screenshot";
+ theUILang.exScreenshot		= "Screenshot";
  theUILang.exPlayInterval	= "Slideshow interval";
  theUILang.exImageFormat	= "Image format";
 

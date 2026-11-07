@@ -1,11 +1,11 @@
 plugin.loadLang();
 
 plugin.config = theWebUI.config;
-theWebUI.config = function(data)
+theWebUI.config = function()
 {
-	plugin.config.call(this,data);
+	plugin.config.call(this);
 	var oldDblClick = this.getTable("fls").ondblclick;
-	this.getTable("fls").ondblclick = function(obj) 
+	this.getTable("fls").ondblclick = function(obj)
 	{
 		if(plugin.enabled && (theWebUI.dID!="") && (theWebUI.dID.length==40))
 		{
@@ -33,7 +33,7 @@ theWebUI.getData = function( hash, no )
 {
 	$("#datahash").val(hash);
 	$("#datano").val(no);
-	$("#getdata").submit();
+	$("#getdata").trigger('submit');
 }
 
 if(plugin.canChangeMenu())
@@ -59,12 +59,12 @@ if(plugin.canChangeMenu())
 					else
 						if(!this.dirs[this.dID].isDirectory(fid))
 							fno = fid.substr(3);
-					if( 
-//						((fno!=null) && (this.files[this.dID][fno].size>=2147483647) && !theWebUI.systemInfo.php.canHandleBigFiles) || 
+					if(
+//						((fno!=null) && (this.files[this.dID][fno].size>=2147483647) && !theWebUI.systemInfo.php.canHandleBigFiles) ||
 						(theWebUI.dID.length>40))
 						fno = null;
 				}
-				theContextMenu.add( [theUILang.getData,  (fno==null) ? null : "theWebUI.getData('" + theWebUI.dID + "',"+fno+")"] );
+				theContextMenu.add( [theUILang.getData,  (fno==null) ? null : () => theWebUI.getData(theWebUI.dID,fno)] );
 			}
 			return(true);
 		}
@@ -74,7 +74,7 @@ if(plugin.canChangeMenu())
 
 plugin.onLangLoaded = function()
 {
-	$(document.body).append($("<iframe name='datafrm'/>").css({visibility: "hidden"}).attr( { name: "datafrm", id: "datafrm" } ).width(0).height(0).load(function()
+	$(document.body).append($("<iframe name='datafrm'/>").css({visibility: "hidden"}).attr( { name: "datafrm", id: "datafrm" } ).width(0).height(0).on('load', function()
 	{
 	        $("#datahash").val('');
 	        $("#datano").val('');

@@ -3,10 +3,10 @@
  *
  * Finnish language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.EditTrackers 		= "Edit Torrent...";
+ theUILang.EditTrackers			= "Edit Torrent...";
  theUILang.EditTorrentProperties	= "Torrent Properties";
  theUILang.errorAddTorrent		= "Error adding torrent file";
  theUILang.errorWriteTorrent		= "Error writing torrent file";

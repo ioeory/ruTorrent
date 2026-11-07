@@ -6,7 +6,7 @@
  * Author: Dario Rugani (kontakt@rugani.de)
  */
 
- theUILang.checkTorrent 	= "Auf Update prüfen";
+ theUILang.checkTorrent		= "Auf Update prüfen";
  theUILang.chkHdr		= "Torrent auf Update prüfen";
  theUILang.checkedAt		= "Letzte Prüfung";
  theUILang.checkedResult	= "Resultat";
@@ -17,7 +17,8 @@
  				  "Wahrscheinlich gelöscht",
  				  "Fehler beim Zugriff auf Tracker",
  				  "Fehler beim Interagieren mit rTorrent",
- 				  "Nicht nötig"
+ 				  "Nicht nötig",
+ 				  "Ignoriert"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

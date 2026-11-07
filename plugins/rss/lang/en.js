@@ -3,18 +3,18 @@
  *
  * English language file.
  *
- * Author: 
+ * Author:
  */
 
  theUILang.addRSS			= "Add RSS Feed";
  theUILang.feedURL			= "Feed URL";
  theUILang.alias			= "Custom Alias";
- theUILang.rssAuto			= "Automatically download items published in feed";
+ theUILang.rssAuto			= "Automatically download items published in the feed";
  theUILang.allFeeds			= "All Feeds";
- theUILang.incorrectURL 		= "Please, specify correct URL feed."
- theUILang.cantFetchRSS 		= "Error loading feed.";
- theUILang.rssAlreadyExist		= "Feed already exists.";
- theUILang.rssDontExist 		= "Feed doesn't exist.";
+ theUILang.incorrectURL			= "Please specify a correct feed URL.";
+ theUILang.cantFetchRSS			= "Error loading feed.";
+ theUILang.rssAlreadyExist		= "The feed already exists.";
+ theUILang.rssDontExist			= "The feed doesn't exist.";
  theUILang.rssCantLoadTorrent		= "Error loading torrent.";
  theUILang.rssStatus			= "RSS";
  theUILang.rssStatusLoaded		= "Already loaded";
@@ -28,23 +28,23 @@
  theUILang.rssMenuEnable		= "Enable Feed";
  theUILang.rssMenuEdit			= "Edit Feed";
  theUILang.rssMenuDelete		= "Delete Feed";
- theUILang.rssDeletePrompt		= "Do you really want to delete selected feed?";
- theUILang.rssNewFilter 		= "New filter";
+ theUILang.rssDeletePrompt		= "Do you really want to delete the selected feed?";
+ theUILang.rssNewFilter			= "New filter";
  theUILang.rssFilter			= "Filter";
- theUILang.rssAddFilter 		= "Add";
- theUILang.rssDelFilter 		= "Delete";
+ theUILang.rssAddFilter			= "Add";
+ theUILang.rssDelFilter			= "Delete";
  theUILang.rssCheckFilter		= "?";
  theUILang.rssFiltersLegend		= "Filter settings";
- theUILang.rssIncorrectFilter		= "Filter is incorrect.";
+ theUILang.rssIncorrectFilter		= "The filter is incorrect.";
  theUILang.foundedByFilter		= "Matches";
  theUILang.rssExclude			= "Exclude";
  theUILang.rssStatusError		= "Load error";
  theUILang.rssFeeds			= "Feeds";
  theUILang.rssCheckTitle		= "Check title field";
  theUILang.rssCheckDescription		= "Check description field";
- theUILang.rssCheckLink 		= "Check link field";
+ theUILang.rssCheckLink			= "Check link field";
  theUILang.rssMinInterval		= "Min interval";
- theUILang.rssIntervalAlways		= "(match always)";
+ theUILang.rssIntervalAlways		= "(always match)";
  theUILang.rssIntervalOnce		= "(match only once)";
  theUILang.rssInterval12h		= "12 hours";
  theUILang.rssInterval1d		= "1 day";
@@ -61,7 +61,7 @@
  theUILang.rssAsLoaded			= "loaded";
  theUILang.rssAsUnloaded		= "unloaded";
  theUILang.addRSSGroup			= "Add RSS Group";
- theUILang.editRSSGroup 		= "Edit RSS Group";
+ theUILang.editRSSGroup			= "Edit RSS Group";
  theUILang.addRSSGroupContent		= "Content";
  theUILang.rssMenuGroupDisable		= "Disable Group";
  theUILang.rssMenuGroupRefresh		= "Update Group";
@@ -69,11 +69,13 @@
  theUILang.rssMenuGroupEdit		= "Edit Group";
  theUILang.rssMenuGroupDelete		= "Delete Group";
  theUILang.rssMenuGroupContentsDelete	= "Delete Contents";
- theUILang.rssDeleteGroupPrompt 	= "Do you really want to delete selected group?";
- theUILang.rssDeleteGroupContentsPrompt = "Do you really want to delete selected group with all contents?";
- theUILang.rssAllFiters 		= "All filters";
- theUILang.rssUpdateInterval 		= "Update interval";
+ theUILang.rssDeleteGroupPrompt		= "Do you really want to delete the selected group?";
+ theUILang.rssDeleteGroupContentsPrompt	= "Do you really want to delete the selected group with all contents?";
+ theUILang.rssAllFiters			= "All filters";
+ theUILang.rssUpdateInterval		= "Update interval";
+ theUILang.rssShowErrorsDelayed		= "Delay RSS error notification until the log tab or RSS feed is visible";
  theUILang.Directories			= "Directories";
  theUILang.Labels			= "Labels";
+ theUILang.rssPatternExample		= "Regular Expression Example";
 
 thePlugins.get("rss").langLoaded();

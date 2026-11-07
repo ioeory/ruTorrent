@@ -3,10 +3,10 @@
  *
  * Russian language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.ratioRulesManager	= "Менеджер правил";
+ theUILang.ratioRulesManager	= "Менеджер правил ratio";
  theUILang.mnu_ratiorule	= "Правила ratio";
  theUILang.ratAddRule		= "Добавить";
  theUILang.ratDelRule		= "Удалить";
@@ -18,8 +18,9 @@
  theUILang.ratTrackerPublic	= "Все трекеры закачки публичные";
  theUILang.ratTrackerPrivate	= "Один из трекеров закачки частный";
  theUILang.ratioThenLegend	= "То";
+ theUILang.ratShortcutLegend	= "Keyboard Shortcuts";
  theUILang.setRatioTo		= "Установить ratio";
- theUILang.setChannelTo 	= "Установить канал";
- theUILang.ratioNewRule 	= "Новое правило";
+ theUILang.setChannelTo		= "Установить канал";
+ theUILang.ratioNewRule		= "Новое правило";
 
 thePlugins.get("extratio").langLoaded();

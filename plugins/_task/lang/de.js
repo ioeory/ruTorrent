@@ -11,6 +11,9 @@
  theUILang.tskConsole		= "Konsole";
  theUILang.tskErrors		= "Diagnose";
  theUILang.tskBackground	= "Verstecken";
+ theUILang.tskCopy		= "Kopieren";
+ theUILang.tskLogEmpty		= "Console log is empty.";
+ theUILang.tskSaveLog		= "Save Log";
  theUILang.tskStart		= "Gestartet";
  theUILang.tskFinish		= "Fertiggestellt";
  theUILang.tskElapsed		= "Verstrichen";

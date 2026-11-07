@@ -3,7 +3,7 @@
  *
  * Russian language file.
  *
- * Author: 
+ * Author:
  */
 
  theUILang.tskCommand		= "Выполнение команды...";
@@ -11,6 +11,9 @@
  theUILang.tskConsole		= "Консоль";
  theUILang.tskErrors		= "Диагностика";
  theUILang.tskBackground	= "Спрятать";
+ theUILang.tskCopy		= "Копировать";
+ theUILang.tskLogEmpty		= "Console log is empty.";
+ theUILang.tskSaveLog		= "Save Log";
  theUILang.tskStart		= "Старт";
  theUILang.tskFinish		= "Завершение";
  theUILang.tskElapsed		= "Затрачено";

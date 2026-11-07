@@ -3,15 +3,15 @@
  *
  * Russian language file.
  *
- * Author: 
+ * Author:
  */
 
  theUILang.rssNewRule		= "Новое правило";
  theUILang.mnu_rssurlrewrite	= "Замена URL в RSS";
- theUILang.rssRulesManager	= "Менеджер правил";
+ theUILang.rssRulesManager	= "Менеджер правил RSS";
  theUILang.rssAddRule		= "Добавить";
  theUILang.rssDelRule		= "Удалить";
- theUILang.rssCheckRule 	= "?";
+ theUILang.rssCheckRule		= "?";
  theUILang.rssRulesLegend	= "Параметры правила";
  theUILang.rssSrcHref		= "Если URL загрузки торрента совпадает с шаблоном";
  theUILang.rssSrcGuid		= "Если URL описания торрента совпадает с шаблоном";

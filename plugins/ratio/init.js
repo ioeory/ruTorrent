@@ -20,11 +20,11 @@ plugin.allDone = function()
 }
 
 plugin.config = theWebUI.config;
-theWebUI.config = function(data)
+theWebUI.config = function()
 {
 	if(plugin.canChangeColumns())
 	{
-		theWebUI.tables.trt.columns.push({ text: 'RatioGroup', width: '60px', id: 'ratiogroup', type: TYPE_STRING});
+		theWebUI.tables.trt.columns.push({ text: 'RatioGroup', width: '80px', id: 'ratiogroup', type: TYPE_STRING});
 		plugin.trtFormat = this.tables.trt.format;
 		theWebUI.tables.trt.format = function(table,arr)
 		{
@@ -40,7 +40,7 @@ theWebUI.config = function(data)
 			return(plugin.trtFormat(table,arr));
 		};
 	}
-	plugin.config.call(this,data);
+	plugin.config.call(this);
 	plugin.reqId = theRequestManager.addRequest("trt", theRequestManager.map("cat=")+'$'+theRequestManager.map("d.views="),function(hash,torrent,value)
 	{
 		torrent.ratiogroup = value;
@@ -85,7 +85,7 @@ if(plugin.canChangeColumns())
 if(plugin.canChangeOptions())
 {
 	plugin.addAndShowSettings = theWebUI.addAndShowSettings;
-	theWebUI.addAndShowSettings = function(arg) 
+	theWebUI.addAndShowSettings = function(arg)
 	{
 		if(plugin.enabled)
 		{
@@ -103,7 +103,7 @@ if(plugin.canChangeOptions())
 		plugin.addAndShowSettings.call(theWebUI,arg);
 	}
 
-	theWebUI.ratioWasChanged = function() 
+	theWebUI.ratioWasChanged = function()
 	{
 		for(var i=0; i<theWebUI.maxRatio; i++)
 		{
@@ -119,7 +119,7 @@ if(plugin.canChangeOptions())
 	}
 
 	plugin.setSettings = theWebUI.setSettings;
-	theWebUI.setSettings = function() 
+	theWebUI.setSettings = function()
 	{
 		plugin.setSettings.call(this);
 		if(plugin.enabled && this.ratioWasChanged())
@@ -131,8 +131,8 @@ if(plugin.canChangeOptions())
 		this.content = "default="+iv($('#ratDefault').val());
 		for(var i=0; i<theWebUI.maxRatio; i++)
 		{
-			var name = $.trim($('#rat_name'+i).val());
-			var upload = iv($('#rat_upload'+i).val());
+			var name = $('#rat_name'+i).val().trim();
+			var upload = $('#rat_upload'+i).val();
 			var min = $('#rat_min'+i).val();
 			var time = $('#rat_time'+i).val();
 			var max = $('#rat_max'+i).val();
@@ -161,7 +161,7 @@ if(plugin.canChangeMenu())
 	theWebUI.createMenu = function(e, id)
 	{
 		plugin.createMenu.call(this, e, id);
-		if(plugin.enabled && plugin.allStuffLoaded)
+		if(plugin.enabled && plugin.allStuffLoaded && !theContextMenu.get(theUILang.rssMenuLoad))
 		{
 			var el = theContextMenu.get(theUILang.Priority);
 			var curNo = null;
@@ -173,11 +173,11 @@ if(plugin.canChangeMenu())
 				if(table.selCount==1)
 					curNo = theWebUI.getRatioData(id);
 				var down = [];
-				down.push([theUILang.mnuRatioUnlimited,(curNo==-1) ? null : "theWebUI.setRatio('-1')"]);
+				down.push([theUILang.mnuRatioUnlimited,(curNo==-1) ? null : () => theWebUI.setRatio('-1')]);
 				down.push([CMENU_SEP]);
-				for(var i=0; i<theWebUI.maxRatio; i++)
+				for(let i=0; i<theWebUI.maxRatio; i++)
 					if(theWebUI.isCorrectRatio(i))
-						down.push([theWebUI.ratios[i].name,(i!=curNo) ? "theWebUI.setRatio('"+i+"')" : null]);
+						down.push([theWebUI.ratios[i].name,(i!=curNo) ? () => theWebUI.setRatio(i) : null]);
 				theContextMenu.add(el,[CMENU_CHILD, theUILang.mnuRatio, down]);
 			}
 		}
@@ -191,7 +191,7 @@ if(plugin.canChangeMenu())
 	       		if(sr[k] && (k.length==40))
 				req += ("&hash=" + k + "&v="+ratio);
 		if(req.length>0)
-			this.request("?action=setratio"+req+"&list=1",[this.addTorrents, this]);
+			this.request("?action=setratio"+req+"&list=1",[this.receiveTorrents, this]);
 	}
 
 	rTorrentStub.prototype.setratio = function()
@@ -234,39 +234,86 @@ theWebUI.isCorrectRatio = function(i)
         	(theWebUI.ratios[i].name!=""));
 }
 
-plugin.onLangLoaded = function() 
-{
-	var s = 
-		"<fieldset>"+
-			"<legend>"+theUILang.ratios+"</legend>"+
-			"<div id='st_ratio_h'>"+
-			"<table>"+
-				"<tr>"+
-					"<td><b>"+theUILang.Num_No+"</b></td>"+
-					"<td align=center><b>"+theUILang.ratioName+"</b></td>"+
-					"<td align=center><b>"+theUILang.minRatio+",%</b></td>"+
-					"<td align=center><b>"+theUILang.maxRatio+",%</b></td>"+
-					"<td align=center><b>"+theUILang.ratioUpload+","+theUILang.MB+"</b></td>"+
-					"<td class='ratio_time' align=center><b>"+theUILang.maxTime+","+theUILang.time_h.substr(0,theUILang.time_h.length-1)+"</b></td>"+
-					"<td align=center><b>"+theUILang.ratioAction+"</b></td>"+
-				"</tr>";
-	for(var i=0; i<theWebUI.maxRatio; i++)
-		s +=
-			"<tr>"+
-				"<td class='alr'><b>"+(i+1)+".</b></td>"+
-				"<td><input type='text' id='rat_name"+i+"' class='TextboxShort'/></td>"+
-				"<td><input type='text' id='rat_min"+i+"' class='Textbox num1'/></td>"+
-				"<td><input type='text' id='rat_max"+i+"' class='Textbox num1'/></td>"+
-				"<td><input type='text' id='rat_upload"+i+"' class='Textbox num1' maxlength='6'/></td>"+
-				"<td class='ratio_time'><input type='text' id='rat_time"+i+"' class='Textbox num1' maxlength='6'/></td>"+
-				"<td><select id='rat_action"+i+"'><option value='0'>"+theUILang.ratioStop+"</option><option value='1'>"+theUILang.ratioStopAndRemove+"</option><option value='2'>"+theUILang.ratioErase+"</option><option value='3'>"+theUILang.ratioEraseData+"</option><option value='4'>"+theUILang.ratioEraseData+" ("+theUILang.All+")</option></select></td>"+
-			"</tr>";
-	s+="</table></div></fieldset>";
-	s+="<div class='aright'><label>"+theUILang.ratioDefault+":</label><select id='ratDefault'><option value='0'>"+theUILang.dontSet+"</option>";
-	for(var i=1; i<=theWebUI.maxRatio; i++)
-		s+="<option value='"+i+"'>"+i+"</option>";
-	s+="</select></div>";
-	this.attachPageToOptions($("<div>").attr("id","st_ratio").html(s).get(0),theUILang.ratios);
+plugin.onLangLoaded = function() {
+	const s = $("<fieldset>").append(
+		$("<legend>").text(theUILang.ratios),
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12 overflow-x-auto").append(
+				$("<table>").append(
+					$("<thead>").append(
+						$("<tr>").append(
+							$("<th>").text(theUILang.Num_No),
+							...[
+								theUILang.ratioName, theUILang.minRatio + ", %",
+								theUILang.maxRatio + ", %", theUILang.ratioUpload + "," + theUILang.GB,
+							].map(th => $("<th>").text(th)),
+							$("<th>").addClass("ratio_time")
+								.text(theUILang.maxTime + ", " + theUILang.time_h.substr(0, theUILang.time_h.length - 1),
+							),
+							$("<th>").text(theUILang.ratioAction),
+						),
+					),
+					$("<tbody>").append(
+						...Array.from(Array(theWebUI.maxRatio).keys()).map(i => $("<tr>").append(
+							$("<td>").text((i + 1) + "."),
+							$("<td>").append(
+								$("<input>").attr({type:"text", id:`rat_name${i}`}).addClass("ratio-name"),
+							),
+							$("<td>").append(
+								$("<input>").attr({type:"text", id:`rat_min${i}`}).addClass("ratio-condition"),
+							),
+							$("<td>").append(
+								$("<input>").attr({type:"text", id:`rat_max${i}`}).addClass("ratio-condition"),
+							),
+							$("<td>").append(
+								$("<input>").attr({type:"text", id:`rat_upload${i}`, maxlength:6}).addClass("ratio-condition"),
+							),
+							$("<td>").addClass("ratio_time").append(
+								$("<input>").attr({type:"text", id:`rat_time${i}`, maxlength:6}).addClass("ratio-condition"),
+							),
+							$("<td>").append(
+								$("<select>").attr({id:`rat_action${i}`}).addClass("ratio-action").append(
+									$("<option>").val(0).text(theUILang.ratioStop),
+									$("<option>").val(1).text(theUILang.ratioStopAndRemove),
+									$("<option>").val(2).text(theUILang.ratioErase),
+									$("<option>").val(3).text(theUILang.ratioEraseData),
+									$("<option>").val(4).text(theUILang.ratioEraseData + " (" + theUILang.All + ")"),
+								),
+							),
+						)),
+					),
+				),
+			),
+			// Default ratio group selector
+			$("<div>").addClass("col-12 col-md-6").append(
+				$("<label>").attr({for:"ratDefault"}).text(theUILang.ratioDefault),
+			),
+			$("<div>").addClass("col-12 col-md-6").append(
+				$("<select>").attr({id:"ratDefault"}).append(
+					$("<option>").val(0).text(theUILang.dontSet),
+					...Array.from(Array(theWebUI.maxRatio).keys()).map(i => $("<option>").val(i + 1).text(i + 1)),
+				),
+			),
+		),
+	);
+	// Table to put the default ratio group selector beside the UL Legend
+	const t = $("<fieldset>").append(
+		$("<legend>").text(theUILang.ratioUpload + ", " + theUILang.GB),
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12").append(
+				$("<span>").text(theUILang.minRatio + ": 0.01" + theUILang.GB + " = 10" + theUILang.MB),
+			),
+			$("<div>").addClass("col-12").append(
+				$("<span>").text(theUILang.maxRatio + ": 999999" + theUILang.GB + " = 1" + theUILang.PB),
+			),
+		),
+	);
+	this.attachPageToOptions(
+		$("<div>").attr({id:"st_ratio"}).append(
+			s, t,
+		)[0],
+		theUILang.ratios,
+	);
 }
 
 plugin.onRemove = function()

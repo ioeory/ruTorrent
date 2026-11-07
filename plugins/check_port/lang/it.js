@@ -3,14 +3,23 @@
  *
  * Italian language file.
  *
- * Author: 
+ * Author: Gianni
+ * Author: Marco (marco.romanelli@protonmail.ch)
  */
 
- theUILang.checkPort		= "Check Port Status";
+ theUILang.checkWebsiteNotFound = "Plugin 'Check_port': Il plugin non funziona. Configurazione non valida.";
+ theUILang.checkPort		= "Controlla stato porta";
+ theUILang.checkingPort		= "Checking port status";
  theUILang.portStatus		= [
- 				  "Port status is unknown",
- 				  "Port is closed",
- 				  "Port is open"
+ 				  "Stato della porta sconosciuto",
+ 				  "La porta è chiusa",
+ 				  "La porta è aperta"
  				  ];
+ theUILang.notAvailable = "-";
+ theUILang.portNotConfigured = "Not available on this server";
+
+ theUILang.forcePort		= "Forza una porta specifica...";
+ theUILang.forcePortPrompt	= "Imposta la porta di ascolto (1-65535):";
+ theUILang.forcePortInvalid	= "Numero di porta non valido.";
 
 thePlugins.get("check_port").langLoaded();

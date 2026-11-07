@@ -1,16 +1,24 @@
-﻿/*
+/*
  * PLUGIN CHECK_PORT
  *
  * Hungarian language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.checkPort		= "Check Port Status";
+ theUILang.checkWebsiteNotFound = "Check_port bővítmény: Bővítmény nem fog működni. Érvénytelen konfiguráció";
+ theUILang.checkPort		= "Port állapotának ellenőrzése";
+ theUILang.checkingPort		= "Checking port status";
  theUILang.portStatus		= [
- 				  "Port status is unknown",
- 				  "Port is closed",
- 				  "Port is open"
+ 				  "Port állapota ismeretlen",
+ 				  "Port zárva van",
+ 				  "Port nyitva van"
  				  ];
+ theUILang.notAvailable = "-";
+ theUILang.portNotConfigured = "Not available on this server";
+
+ theUILang.forcePort		= "Adott port kényszerítése...";
+ theUILang.forcePortPrompt	= "Figyelő port beállítása (1-65535):";
+ theUILang.forcePortInvalid	= "Érvénytelen portszám.";
 
 thePlugins.get("check_port").langLoaded();

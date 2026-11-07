@@ -1,15 +1,15 @@
-﻿/*
+/*
  * PLUGIN DATADIR
  *
  * Hungarian language file.
  *
- * Author: 
+ * Author:
  */
 
- theUILang.DataDir		= "Save to";
- theUILang.DataDirMove		= "Move data files";
- theUILang.datadirDlgCaption	= "Torrent Data Directory";
- theUILang.datadirDirNotFound	= "DataDir plugin: Invalid directory";
- theUILang.datadirSetDirFail	= "DataDir plugin: Operation fail";
+ theUILang.DataDir		= "Mentés a";
+ theUILang.DataDirMove		= "Adatok áthelyezése";
+ theUILang.datadirDlgCaption	= "Torrent adatok könyvtára";
+ theUILang.datadirDirNotFound	= "DataDir plugin: Érvénytelen könyvtár";
+ theUILang.datadirSetDirFail	= "DataDir plugin: Művelet sikertelen";
 
 thePlugins.get("datadir").langLoaded();

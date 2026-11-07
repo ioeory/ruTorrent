@@ -2,6 +2,7 @@ plugin.loadMainCSS();
 plugin.loadLang();
 
 plugin.categories = [ 'all', 'movies', 'tv', 'music', 'games', 'anime', 'software', 'pictures', 'books' ];
+const catlist = theWebUI.categoryList;
 
 plugin.set = theSearchEngines.set;
 theSearchEngines.set = function(val, noSave)
@@ -12,9 +13,9 @@ theSearchEngines.set = function(val, noSave)
 
 theSearchEngines.getEngName = function(eng)
 {
-	return(eng=="all" ? theUILang.All : 
-		eng=="public" ? theUILang.extAllPublic : 
-		eng=="private" ? theUILang.extAllPrivate : 
+	return(eng=="all" ? theUILang.All :
+		eng=="public" ? theUILang.extAllPublic :
+		eng=="private" ? theUILang.extAllPrivate :
 		eng);
 }
 
@@ -40,20 +41,20 @@ theSearchEngines.show = function()
 		theContextMenu.clear();
 		theSearchEngines.checkForIncorrectCurrent(false);
 		if(theSearchEngines.current=='all')
-			theContextMenu.add([CMENU_SEL, theUILang.All, "theSearchEngines.set('all')"]);
+			theContextMenu.add([CMENU_SEL, theUILang.All, () => theSearchEngines.set('all')]);
 		else
-			theContextMenu.add([theUILang.All, "theSearchEngines.set('all')"]);
+			theContextMenu.add([theUILang.All, () => theSearchEngines.set('all')]);
 
 		if(this.isPublicPresent(true) && this.isPublicPresent(false))
 		{
 			if(theSearchEngines.current=='public')
-				theContextMenu.add([CMENU_SEL, theUILang.extAllPublic, "theSearchEngines.set('public')"]);
+				theContextMenu.add([CMENU_SEL, theUILang.extAllPublic, () => theSearchEngines.set('public')]);
 			else
-				theContextMenu.add([theUILang.extAllPublic, "theSearchEngines.set('public')"]);
+				theContextMenu.add([theUILang.extAllPublic, () => theSearchEngines.set('public')]);
 			if(theSearchEngines.current=='private')
-				theContextMenu.add([CMENU_SEL, theUILang.extAllPrivate, "theSearchEngines.set('private')"]);
+				theContextMenu.add([CMENU_SEL, theUILang.extAllPrivate, () => theSearchEngines.set('private')]);
 			else
-				theContextMenu.add([theUILang.extAllPrivate, "theSearchEngines.set('private')"]);
+				theContextMenu.add([theUILang.extAllPrivate, () => theSearchEngines.set('private')]);
 		}
 		theContextMenu.add([CMENU_SEP]);
 
@@ -83,24 +84,24 @@ theSearchEngines.show = function()
 				        if(val.public)
 				        {
 						if(theSearchEngines.current==ndx)
-							public.push([CMENU_SEL, ndx, "theSearchEngines.set('"+ndx+"')"]);
+							public.push([CMENU_SEL, ndx, () => theSearchEngines.set(ndx)]);
 						else
-							public.push([ndx, "theSearchEngines.set('"+ndx+"')"]);
+							public.push([ndx, () => theSearchEngines.set(ndx)]);
 					}
 					else
 				        {
 						if(theSearchEngines.current==ndx)
-							private.push([CMENU_SEL, ndx, "theSearchEngines.set('"+ndx+"')"]);
+							private.push([CMENU_SEL, ndx, () => theSearchEngines.set(ndx)]);
 						else
-							private.push([ndx, "theSearchEngines.set('"+ndx+"')"]);
+							private.push([ndx, () => theSearchEngines.set(ndx)]);
 					}
 				}
 				else
 				{
 					if(theSearchEngines.current==ndx)
-						theContextMenu.add([CMENU_SEL, ndx, "theSearchEngines.set('"+ndx+"')"]);
+						theContextMenu.add([CMENU_SEL, ndx, () => theSearchEngines.set(ndx)]);
 					else
-						theContextMenu.add([ndx, "theSearchEngines.set('"+ndx+"')"]);
+						theContextMenu.add([ndx, () => theSearchEngines.set(ndx)]);
 				}
 			}
 			else
@@ -114,9 +115,9 @@ theSearchEngines.show = function()
 		if(publicPresent || privatePresent)
 			theContextMenu.add([CMENU_SEP]);
 		if(theSearchEngines.current==-1)
-			theContextMenu.add([CMENU_SEL, theUILang.innerSearch, "theSearchEngines.set(-1)"]);
+			theContextMenu.add([CMENU_SEL, theUILang.innerSearch, () => theSearchEngines.set(-1)]);
 		else
-			theContextMenu.add([theUILang.innerSearch, "theSearchEngines.set(-1)"]);
+			theContextMenu.add([theUILang.innerSearch, () => theSearchEngines.set(-1)]);
 		var offs = $("#search").offset();
 		theContextMenu.show(offs.left-5,offs.top+5+$("#search").height());
 	}
@@ -135,14 +136,14 @@ theSearchEngines.checkForIncorrectCurrent = function( refreshCats )
 		}
 		else
 		{
-			if((    (theSearchEngines.current!='all') && 
-				(theSearchEngines.current!='private') && 
-				(theSearchEngines.current!='public') && 
-				(!$type(theSearchEngines.sites[theSearchEngines.current]) || !theSearchEngines.sites[theSearchEngines.current].enabled) 
-			   ) 
+			if((    (theSearchEngines.current!='all') &&
+				(theSearchEngines.current!='private') &&
+				(theSearchEngines.current!='public') &&
+				(!$type(theSearchEngines.sites[theSearchEngines.current]) || !theSearchEngines.sites[theSearchEngines.current].enabled)
+			   )
 				||
 			   (
-				!(this.isPublicPresent(true) && this.isPublicPresent(false)) && 
+				!(this.isPublicPresent(true) && this.isPublicPresent(false)) &&
 				((theSearchEngines.current=='private') || (theSearchEngines.current=='public'))
 			   ))
 			{
@@ -160,17 +161,21 @@ theSearchEngines.run = function()
 {
 	if(plugin.enabled)
 	{
-		var s = $.trim($("#query").val());
+		var s = $("#query").val().trim();
 		if(s.length)
 		{
 			this.checkForIncorrectCurrent(false);
 		        if(theSearchEngines.current==-1)
 			        theWebUI.setTeg(s);
 			else
-			{		
+			{
 				$("#query").prop("readonly",true);
 				theWebUI.requestWithoutTimeout("?action=extsearch&s="+theSearchEngines.current+"&v="+encodeURIComponent(s)+"&v="+encodeURIComponent($("#exscategory").val()),[theWebUI.setExtSearchTag, theWebUI]);
 			}
+		}
+		else
+		{
+			theWebUI.categoryList.resetSelection();
 		}
 	}
 	else
@@ -192,14 +197,14 @@ rTorrentStub.prototype.loadtegtorrents = function()
 		this.content += '&torrents_start_stopped=1';
 	if($("#tegnot_add_path").prop("checked"))
 		this.content += '&not_add_path=1';
-	var dir = $.trim($("#tegdir_edit").val());
+	var dir = $("#tegdir_edit").val().trim();
 	if(dir.length)
 		this.content += ('&dir_edit='+encodeURIComponent(dir));
-	var lbl = $.trim($("#teglabel").val());
+	var lbl = $("#teglabel").val().trim();
 	if(lbl.length)
 		this.content += '&label='+encodeURIComponent(lbl);
 	if($("#tegfast_resume").prop("checked"))
-		this.content += 'fast_resume=1&';
+		this.content += '&fast_resume=1';
 	for(var i = 0; i<plugin.tegArray.length; i++)
 	{
 		var item = plugin.tegArray[i];
@@ -223,7 +228,6 @@ plugin.reloadData = function(id)
 	        table.clearRows();
 		table.scrollTo(0);
 		var data = plugin.tegs[id].data;
-		var count = 0;
 		for( var i = 0; i<data.length; i++ )
 		{
 			var item = data[i];
@@ -234,85 +238,76 @@ plugin.reloadData = function(id)
 					table.addRow(theWebUI.getTable("trt").getValues(item.hash),
 						id+'$'+i, theWebUI.getTable("trt").getIcon(item.hash));
 				}
-				else		
+				else
 				table.addRowById(
 				{
 					name: item.name,
-					created: item.time-theWebUI.deltaTime/1000,
+					created: item.time,
 					peers: item.peers,
 					seeds: item.seeds,
 					size: item.size,
 					status: item.src,
 					label: item.cat
 				}, id+'$'+i, "Engine"+item.src);
-				count++;
 			}
 		}
-		if(table.sIndex !=- 1)
+		if(table.sortId)
 			table.Sort();
-		plugin.correctCounter(id,count);
+		catlist.refreshAndSyncPanel('psearch');
 		table.noSort = false;
 	}
 }
 
-plugin.enterTeg = function()
-{
-	plugin.reloadData(theWebUI.actLbl);
-	var lst = $("#List");
-	var table = theWebUI.getTable("teg");
-	if(lst.is(":visible"))	
-	{
-		theWebUI.getTable("trt").clearSelection();
-		theWebUI.dID = "";
-		theWebUI.clearDetails();
-		var teg = $("#TegList");
-		teg.css( { width: lst.width(), height: lst.height() } );
-		table.resize(lst.width(), lst.height());
-		lst.hide();
-		teg.show();
-		table.scrollTo(0);
-	}
-	table.calcSize().resizeHack();
-}
 
-plugin.leaveTeg = function()
+plugin.switchLabel = catlist.switchLabel.bind(catlist);
+catlist.switchLabel = function(panelId, targetId, toggle=false, range=false)
 {
-	$("#TegList").hide();
-	$("#List").show();
-}
-
-plugin.correctCounter = function(id,count)
-{
-	if($type(plugin.tegs[id]))
-	{
-		if(count===null)
+	const tegList = $("#TegList");
+	const list = $("#List");
+	if (plugin.enabled
+		&& panelId == 'psearch'
+		&& targetId in plugin.tegs
+	) {
+		// no support for multi selection
+		toggle = false;
+		range = false;
+		plugin.reloadData(targetId);
+		const table = theWebUI.getTable("teg");
+		if (!tegList.is(":visible"))
 		{
-			count = 0;
-			var data = plugin.tegs[id].data;
-			for( var i = 0; i<data.length; i++ )
-				if(!data[i].deleted)			
-					count++;
+			// switch to extsearch view
+			theWebUI.getTable("trt").clearSelection();
+			theWebUI.dID = "";
+			theWebUI.clearDetails();
+			table.resize(list.width(), list.height());
+			tegList.show();
 		}
-		$("#"+id+"-c").text(count);
-		$("#"+id).prop("title",plugin.tegs[id].val+" ("+count+")");
+		table.scrollTo(0);
+		table.resizeColumn();
+	} else if (tegList.is(":visible")) {
+		// switch away from extsearch view
+		tegList.hide();
+		list.show();
 	}
+	const change = plugin.switchLabel(panelId, targetId, toggle, range);
+
+	// finally hide list if teglist shown
+	if (tegList.is(":visible")) {
+		list.hide();
+	}
+	return change;
 }
 
-plugin.switchLabel = theWebUI.switchLabel;
-theWebUI.switchLabel = function(obj)
-{
-	if(plugin.enabled && theWebUI.actLbl && $type(plugin.tegs[theWebUI.actLbl]))
-		plugin.leaveTeg();
-	plugin.switchLabel.call(theWebUI,obj);
-	if(plugin.enabled && theWebUI.actLbl && $type(plugin.tegs[theWebUI.actLbl]))
-		plugin.enterTeg();
+theWebUI.activeExtTegId = function() {
+	return catlist.selection.ids('psearch').find(lid => lid in plugin.tegs);
 }
 
-plugin.filterByLabel = theWebUI.filterByLabel;
-theWebUI.filterByLabel = function(hash)
+plugin.filterTorrentTable = theWebUI.filterTorrentTable;
+theWebUI.filterTorrentTable = function()
 {
-        if(!$($$(this.actLbl)).hasClass("exteg"))
-		plugin.filterByLabel.call(theWebUI,hash);
+	if (!theWebUI.activeExtTegId()) {
+		plugin.filterTorrentTable.call(theWebUI);
+	}
 }
 
 theWebUI.setTagsHash = function(d)
@@ -324,7 +319,7 @@ theWebUI.setTagsHash = function(d)
 			var item = plugin.tegs[d.teg].data[ d.data[i].ndx ];
 			item.hash = d.data[i].hash;
 			noty( (item.hash ? theUILang.addTorrentSuccess : theUILang.addTorrentFailed) +" ("+item.name+')', (item.hash ? "success" : "error") );
-		} 
+		}
 		theWebUI.getTorrents("list=1");
 	}
 }
@@ -342,37 +337,41 @@ theWebUI.extTegLoad = function()
 theWebUI.extTegOpen = function()
 {
 	for(var i = 0; i<plugin.tegArray.length; i++)
-		window.open(plugin.tegArray[i].data.desc,"_blank");
+		openExternalURL(plugin.tegArray[i].data.desc);
 }
 
 theWebUI.tegItemRemove = function()
 {
 	var table = theWebUI.getTable("teg");
+	const tegId = theWebUI.activeExtTegId();
 	for(var i = 0; i<plugin.tegArray.length; i++)
 	{
-		plugin.tegs[theWebUI.actLbl].data[plugin.tegArray[i].ndx].deleted = true;
-		table.removeRow( theWebUI.actLbl+"$"+plugin.tegArray[i].ndx );
+		plugin.tegs[tegId].data[plugin.tegArray[i].ndx].deleted = true;
+		table.removeRow( tegId+"$"+plugin.tegArray[i].ndx );
 	}
-	plugin.correctCounter(theWebUI.actLbl,null);
+	table.correctSelection();
+	catlist.refreshAndSyncPanel("psearch");
 	table.refreshRows();
 }
 
 theWebUI.showTegURLInfo = function()
 {
-	var table = theWebUI.getTable("teg");
+	const tegId = theWebUI.activeExtTegId();
 	for(var i = 0; i<plugin.tegArray.length; i++)
 	{
-		log(theUILang.exsURLGUID+": "+plugin.tegs[theWebUI.actLbl].data[plugin.tegArray[i].ndx].desc);
-		log(theUILang.exsURLHref+": "+plugin.tegs[theWebUI.actLbl].data[plugin.tegArray[i].ndx].link);
+		log(theUILang.exsURLGUID+": "+plugin.tegs[tegId].data[plugin.tegArray[i].ndx].desc);
+		log(theUILang.exsURLHref+": "+plugin.tegs[tegId].data[plugin.tegArray[i].ndx].link);
 	}
 }
 
 theWebUI.extTegDelete = function()
 {
-	var lbl = theWebUI.actLbl;
-	theWebUI.switchLabel($$("-_-_-all-_-_-"));
-	delete plugin.tegs[lbl];
-	$($$(lbl)).remove();
+	const tegId = theWebUI.activeExtTegId();
+	catlist.switchLabel('psearch', '');
+	if (tegId) {
+		delete plugin.tegs[tegId];
+		catlist.refreshAndSyncPanel("psearch");
+	}
 }
 
 plugin.createExtTegMenu = function(e, id)
@@ -381,7 +380,7 @@ plugin.createExtTegMenu = function(e, id)
 	plugin.tegArray = new Array();
 
 	var sr = theWebUI.getTable("teg").rowSel;
-	for(var k in sr) 
+	for(var k in sr)
 	{
 		if(sr[k] == true)
 		{
@@ -401,10 +400,10 @@ plugin.createExtTegMenu = function(e, id)
 	{
 	        if(plugin.canChangeMenu())
 	        {
-			theContextMenu.add([ theUILang.tegMenuLoad, "theWebUI.extTegLoad()"]);
-			theContextMenu.add([ theUILang.tegMenuOpen, "theWebUI.extTegOpen()"]);
-			theContextMenu.add([ theUILang.tegMenuDeleteItem, "theWebUI.tegItemRemove()"]);
-			theContextMenu.add([ theUILang.exsURLInfo, "theWebUI.showTegURLInfo()"] );
+			theContextMenu.add([ theUILang.tegMenuLoad, () => theWebUI.extTegLoad()]);
+			theContextMenu.add([ theUILang.tegMenuOpen, () => theWebUI.extTegOpen()]);
+			theContextMenu.add([ theUILang.tegMenuDeleteItem, () => theWebUI.tegItemRemove()]);
+			theContextMenu.add([ theUILang.exsURLInfo, () => theWebUI.showTegURLInfo()] );
 		}
 		else
 			theContextMenu.hide();
@@ -413,7 +412,7 @@ plugin.createExtTegMenu = function(e, id)
 	if(trtArray.length)
 	{
 	        var table = theWebUI.getTable("trt");
-		for(var k in table.rowSel)
+		for(k in table.rowSel)
 			table.rowSel[k] = false;
 		table.selCount = trtArray.length;
 		for(var i = 0; i<trtArray.length; i++)
@@ -423,61 +422,69 @@ plugin.createExtTegMenu = function(e, id)
 		theWebUI.createMenu(e, trtArray[0]);
 	}
 }
+function idIsExTeg(labelId) {
+	return labelId?.startsWith('extteg_') ?? false;
+}
 
-plugin.extTegContextMenu = function(e)
-{
-        if(e.which==3)
-        {
-		if(plugin.canChangeMenu())
-		{
-			var table = theWebUI.getTable("teg");
-			theWebUI.getTable("trt").clearSelection();
-			table.clearSelection();
-			theWebUI.switchLabel(this);
-			table.fillSelection();
-			var id = table.getFirstSelected();
-			if(id)
-			{
-				plugin.createExtTegMenu(null, id);
-		   		theContextMenu.add([CMENU_SEP]);
-			}
-			else
-				theContextMenu.clear();
-			theContextMenu.add([ theUILang.tegRefresh,  "theWebUI.tegRefresh()"]);
-			theContextMenu.add([ theUILang.tegMenuDelete, "theWebUI.extTegDelete()"]);
-			theContextMenu.show();
-		}
-		else
-		{
-			theContextMenu.hide();
-			theWebUI.switchLabel(this);
-		}
+plugin.contextMenuTable = theWebUI.contextMenuTable;
+theWebUI.contextMenuTable = function(panelId, labelId) {
+	return panelId === 'psearch' && idIsExTeg(labelId) ?
+		theWebUI.getTable('teg')
+		: plugin.contextMenuTable.call(theWebUI, panelId, labelId);
+},
+
+plugin.contextMenuEntries = catlist.contextMenuEntries.bind(catlist);
+catlist.contextMenuEntries = function(panelId, labelId) {
+	if (panelId === 'psearch' && idIsExTeg(labelId)) {
+		theWebUI.getTable('trt').clearSelection();
+		return plugin.canChangeMenu() ? [
+			[ theUILang.tegRefresh,  () => theWebUI.tegRefresh()],
+			[ theUILang.tegMenuDelete, () => theWebUI.extTegDelete()]
+		] : false;
 	}
-	else
-		theWebUI.switchLabel(this);
-	return(false);
-};
+	return plugin.contextMenuEntries(panelId, labelId);
+}
+
+plugin.createMenu = theWebUI.createMenu;
+theWebUI.createMenu = function(e,id) {
+	if (id in this.getTable('teg').rowSel) {
+		// context menu for ext search
+		plugin.createExtTegMenu(e, id);
+	} else {
+		plugin.createMenu.call(theWebUI, e, id);
+	}
+}
+
+const psearchEntries = catlist.refreshPanel.psearch.bind(catlist);
+catlist.refreshPanel.psearch = (attribs) => psearchEntries(attribs).concat(Object.entries(plugin.tegs)
+	.map(([tegId, teg]) => [
+		tegId,
+		{
+			...attribs.get(tegId),
+			text: teg.val,
+			icon: `url:./plugins/extsearch/images/${teg.eng === 'all' ? 'search' : teg.eng}.png`,
+			count: String(teg.data.filter(d => !d.deleted).length),
+			selected: catlist.isLabelIdSelected("psearch", tegId),
+		}
+	]));
 
 theWebUI.setExtSearchTag = function( d )
 {
 	$("#query").removeAttr("readonly");
-	var what = $.trim($("#query").val());
+	var what = $("#query").val().trim();
 	var str = theSearchEngines.getEngName(d.eng)+"/"+($type(theUILang["excat"+d.cat]) ? theUILang["excat"+d.cat] : d.cat)+": "+what;
 	for( var id in plugin.tegs )
 		if(plugin.tegs[id].val==str)
 		{
 			plugin.tegs[id].data = d.data;
-			theWebUI.switchLabel($$(id));
+			catlist.switchLabel('psearch', id);
 			return;
 		}
-	var tegId = "extteg_"+plugin.lastTeg;
+	const tegId = "extteg_"+plugin.lastTeg;
 	plugin.lastTeg++;
-	var el = $("<LI>").attr("id",tegId).addClass("exteg").addClass('Engine'+d.eng).attr("title",str+" (0)").
-		html(escapeHTML(str) + "&nbsp;(<span id=\"" + tegId + "-c\">0</span>)").
-		mouseclick(plugin.extTegContextMenu).addClass("cat")
-	$("#lblf").append( el );
 	plugin.tegs[tegId] = { "val": str, "what": what, "cat": d.cat, "eng": d.eng, "data": d.data };
-	theWebUI.switchLabel(el[0]);
+	catlist.refresh('psearch');
+	catlist.switchLabel('psearch', tegId);
 }
 
 plugin.getTegByRowId = function( rowId )
@@ -498,14 +505,15 @@ theWebUI.loadTorrents = function(needSort)
 {
 	plugin.loadTorrents.call(this,needSort);
 	var table = this.getTable("teg");
-	if(plugin.enabled && this.actLbl && $type(plugin.tegs[this.actLbl]))
+	const tegId = theWebUI.activeExtTegId();
+	if(plugin.enabled && tegId)
 	{
 		var updated = false;
-		var tegItems = plugin.tegs[this.actLbl].data;
+		var tegItems = plugin.tegs[tegId].data;
 		for(var i=0; i<tegItems.length; i++)
 		{
 			var item = tegItems[i];
-			var ndx = this.actLbl+'$'+i;
+			var ndx = tegId+'$'+i;
 			if($type(table.rowdata[ndx]))
 			{
 				if((item.hash!="") && $type(this.torrents[item.hash]))
@@ -515,27 +523,27 @@ theWebUI.loadTorrents = function(needSort)
 					updated = table.setValuesById(ndx,
 					{
 						name: item.name,
-						created: item.time-theWebUI.deltaTime/1000,
+						created: item.time,
 						peers: item.peers,
 						seeds: item.seeds,
 						size: item.size,
 						status: item.src,
 						label: item.cat
-					},true) || updated; 
+					},true) || updated;
 					updated = table.setIcon(ndx,"Engine"+item.src) || updated;
 				}
 			}
 		}
-		if(updated && (table.sIndex !=- 1))
+		if(updated && table.sortId)
 			table.Sort();
 	}
 }
 
 theWebUI.tegRefresh = function()
 {
-	if($type(plugin.tegs[theWebUI.actLbl]))
-	{
-		var item = plugin.tegs[theWebUI.actLbl];
+	const tegId = theWebUI.activeExtTegId();
+	if (tegId) {
+		const item = plugin.tegs[tegId];
 		$("#query").val(item.what).prop("readonly",true);
 		theWebUI.requestWithoutTimeout("?action=extsearch&s="+item.eng+"&v="+encodeURIComponent(item.what)+"&v="+encodeURIComponent(item.cat),[theWebUI.setExtSearchTag, theWebUI]);
 	}
@@ -545,24 +553,24 @@ theWebUI.tegItemSelect = function(e,id)
 {
 	var sr = theWebUI.getTable("teg").rowSel;
 	var trtArray = new Array();
-	for(var k in sr) 
+	for(var k in sr)
 	{
 		if(sr[k] == true)
 		{
-			var nfo = plugin.getTegByRowId(k);	
+			var nfo = plugin.getTegByRowId(k);
 			if(nfo && nfo.data.hash && $type(theWebUI.torrents[nfo.data.hash]))
 				trtArray.push(nfo.data.hash);
 		}
 	}
 	var table = theWebUI.getTable("trt");
-	for(var k in table.rowSel)
+	for(k in table.rowSel)
 		table.rowSel[k] = false;
 	table.selCount = trtArray.length;
 	for(var i = 0; i<trtArray.length; i++)
 		table.rowSel[trtArray[i]] = true;
 	table.refreshSelection();
 	if(id && (nfo = plugin.getTegByRowId(id)) &&
-		nfo.data.hash && 
+		nfo.data.hash &&
 		$type(theWebUI.torrents[nfo.data.hash]))
 		theWebUI.trtSelect(e, nfo.data.hash);
 	else
@@ -581,7 +589,7 @@ theWebUI.tegItemSelect = function(e,id)
 
 theWebUI.tegItemDblClick = function(obj)
 {
-	var nfo = plugin.getTegByRowId(obj.id);	
+	var nfo = plugin.getTegByRowId(obj.id);
 	if(nfo)
 	{
 		if(nfo.data.hash && $type(theWebUI.torrents[nfo.data.hash]))
@@ -589,10 +597,9 @@ theWebUI.tegItemDblClick = function(obj)
 			var tmp = new Object();
 	                tmp.id = nfo.data.hash;
         		theWebUI.getTable("trt").ondblclick( tmp );
-        		delete tmp;
 		}
 		else
-			window.open(nfo.data.desc,"_blank");
+			openExternalURL(nfo.data.desc);
 	}
 }
 
@@ -600,28 +607,16 @@ plugin.resizeTop = theWebUI.resizeTop;
 theWebUI.resizeTop = function( w, h )
 {
 	plugin.resizeTop.call(theWebUI,w,h);
-	if(plugin.enabled)
-	{
-		if(w!==null)
-		{
-			$("#TegList").width( w );
-			if(theWebUI.configured)
-		       	       	this.getTable("teg").resize( w );
-		}
-        	if(h!==null)
-		{
-			$("#TegList").height( h );
-			if(theWebUI.configured)
-				this.getTable("teg").resize(null,h); 
-	       	}
-	}
+	// #TegList is sized by the layout, as #List is; only the rows need redrawing.
+	if(plugin.enabled && theWebUI.configured)
+		this.getTable("teg").resize(w,h);
 }
 
 plugin.config = theWebUI.config;
-theWebUI.config = function(data)
+theWebUI.config = function()
 {
 	$("#List").after($("<div>").attr("id","TegList").css("display","none"));
-	this.tables["teg"] =  
+	this.tables["teg"] =
 	{
 	        obj:		new dxSTable(),
 		container:	"TegList",
@@ -631,22 +626,22 @@ theWebUI.config = function(data)
 		ondblclick:	function(obj) { theWebUI.tegItemDblClick(obj); return(false); },
 		ondelete:	function() { theWebUI.tegItemRemove(); }
 	};
-	plugin.config.call(this,data);
+	plugin.config.call(this);
 	theSearchEngines.checkForIncorrectCurrent(true);
 }
 
 if(plugin.enabled && plugin.canChangeOptions())
 {
 	plugin.andShowSettings = theWebUI.addAndShowSettings;
-	theWebUI.addAndShowSettings = function(arg) 
+	theWebUI.addAndShowSettings = function(arg)
 	{
 		if(plugin.enabled)
 		{
 			$('#exs_limit').val(theSearchEngines.globalLimit);
 			$.each(theSearchEngines.sites,function(ndx,val)
 			{
-				$('#'+ndx+'_enabled').prop("checked", (val.enabled==1)).change();
-				$('#'+ndx+'_global').prop("checked", (val.global==1)).change();
+				$('#'+ndx+'_enabled').prop("checked", (val.enabled==1)).trigger('change');
+				$('#'+ndx+'_global').prop("checked", (val.global==1)).trigger('change');
 				$('#'+ndx+'_limit').val(val.limit);
 
 			        if(val.enabled==1)
@@ -657,12 +652,12 @@ if(plugin.enabled && plugin.canChangeOptions())
 			});
 
 		}
-		$('#sel_public').change();
-		$('#sel_private').change();
+		$('#sel_public').trigger('change');
+		$('#sel_private').trigger('change');
 		plugin.andShowSettings.call(theWebUI,arg);
 	}
 
-	plugin.dataWasChanged = function() 
+	plugin.dataWasChanged = function()
 	{
 		if(iv($('#exs_limit').val())!=theSearchEngines.globalLimit)
 			return(true);
@@ -681,7 +676,7 @@ if(plugin.enabled && plugin.canChangeOptions())
 	}
 
 	plugin.setSettings = theWebUI.setSettings;
-	theWebUI.setSettings = function() 
+	theWebUI.setSettings = function()
 	{
 		plugin.setSettings.call(this);
 		if(plugin.enabled && plugin.dataWasChanged())
@@ -722,10 +717,10 @@ plugin.refreshCategories = function()
 	else
         if($type(theSearchEngines.sites[theSearchEngines.current]))
 	{
-		for( var i=0; i<theSearchEngines.sites[theSearchEngines.current].cats.length; i++)
+		for( i=0; i<theSearchEngines.sites[theSearchEngines.current].cats.length; i++)
 			$('#exscategory').append("<option value='"+theSearchEngines.sites[theSearchEngines.current].cats[i]+"'>"+theSearchEngines.sites[theSearchEngines.current].cats[i]+"</option>");
 	}
-	$("#exscategory").prop("disabled",(theSearchEngines.current == -1));
+	$("#exscategory").prop("hidden", (theSearchEngines.current === -1));
 }
 
 plugin.shutdownOldVersion = function()
@@ -739,127 +734,211 @@ plugin.shutdownOldVersion = function()
 		setTimeout(arguments.callee,1000);
 }
 
-plugin.onLangLoaded = function()
-{
-	theDialogManager.make( "tegLoadTorrents", theUILang.torrent_add,
-		"<div class='content'>"+
-			"<label>"+theUILang.Base_directory+":</label><input type='text' id='tegdir_edit' class='TextboxLarge'/><br/>"+
-			"<label></label><input type='checkbox' id='tegnot_add_path'/>"+theUILang.Dont_add_tname+"<br/>"+
-			"<label></label><input type='checkbox' id='tegtorrents_start_stopped'/>"+theUILang.Dnt_start_down_auto+"<br/>"+
-			'<label></label><input type="checkbox" id="tegfast_resume"/>'+theUILang.doFastResume+'<br/>'+
-			"<label>"+theUILang.Label+":</label><input type='text' id='teglabel' class='TextboxLarge'/>"+
-		"</div>"+
-		"<div id='buttons' class='aright buttons-list'><input type='button' class='OK Button' value="+theUILang.ok+" onclick='theDialogManager.hide(\"tegLoadTorrents\");theWebUI.tegLoadTorrents();return(false);'/><input type='button' class='Cancel Button' value='"+theUILang.Cancel+"'/></div>",
-		true);
-	if(thePlugins.isInstalled("_getdir"))
-	{
-		$('#tegdir_edit').after($("<input type=button>").addClass("Button").attr("id","tegBtn").focus( function() { this.blur(); } ));
-		var btn = new theWebUI.rDirBrowser( 'tegLoadTorrents', 'tegdir_edit', 'tegBtn' );
-		theDialogManager.setHandler('tegLoadTorrents','afterHide',function()
-		{
-			btn.hide();
-		});
+plugin.onLangLoaded = function() {
+	const tegLoadTorrentsContent = $("<div>").addClass("cont").append(
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12 col-md-3 justify-content-md-end").append(
+				$("<label>").attr({for:"tegdir_edit"}).text(theUILang.Base_directory + ":"),
+			),
+			$("<div>").addClass("col-12 col-md-9").append(
+				$("<input>").attr({type:"text", id:"tegdir_edit"}),
+			),
+			...[
+				["tegnot_add_path", theUILang.Dont_add_tname],
+				["tegtorrents_start_stopped", theUILang.Dnt_start_down_auto],
+				["tegfast_resume", theUILang.doFastResume],
+			].map(([id, text]) => $("<div>").addClass("col-12 col-md-9 offset-md-3").append(
+				$("<input>").attr({type:"checkbox", id:id}),
+				$("<label>").attr({for:id}).text(text),
+			)),
+			$("<div>").addClass("col-12 col-md-3 justify-content-md-end").append(
+				$("<label>").attr({for:"teglabel"}).text(theUILang.Label + ":"),
+			),
+			$("<div>").addClass("col-12 col-md-9 d-flex").append(
+				$("<input>").attr({type:"text", id:"teglabel", placeholder:theUILang.Label}).addClass("flex-grow-1"),
+				$("<select>").attr({id:"teglabel_select"}).addClass("flex-grow-1"),
+				$("<button>").attr({type:"button", id:"teglabel_return_select"}).text(theUILang.Return_select_label),
+			),
+		),
+	);
+	const tegLoadTorrentsButtons = $("<div>").append(
+		$("<div>").attr({id:"buttons"}).addClass("buttons-list").append(
+			$("<button>").attr({type:"button"}).addClass("OK").on("click", () => {theDialogManager.hide('tegLoadTorrents'); theWebUI.tegLoadTorrents(); return(false);}).text(theUILang.ok),
+			$("<button>").attr({type:"button"}).addClass("Cancel").text(theUILang.Cancel),
+		),
+	);
+	theDialogManager.make("tegLoadTorrents", theUILang.torrent_add,
+		[tegLoadTorrentsContent, tegLoadTorrentsButtons],
+		true,
+	);
+	if (thePlugins.isInstalled("_getdir")) {
+		new theWebUI.rDirBrowser("tegdir_edit");
 	}
-	var s = "<fieldset>"+
-			"<legend>"+theUILang.exsGlobalLimit+"</legend>"+
-			"<div class='checkbox'><label for='exs_limit' id='lbl_exs_limit'>"+theUILang.exsLimit+":</label><input type='text' class='Textbox num' maxlength=6 id='exs_limit'/></div>"+
-		"</fieldset>";
-	var contPublic = "";
-	var contPrivate = "";
-	var optPublic = "";
-	var optPrivate = "";
-	var styles = "";
-	var toDisable = [];
-	$.each(theSearchEngines.sites,function(ndx,val)
-	{
-		if(val.public)
-		{
-			contPublic +=
-				"<div id='cont_"+ndx+"' class='seng_public'>"+
-					"<div class='checkbox'><input type='checkbox' id='"+ndx+"_enabled' onchange=\"$('#opt_"+ndx+"').toggleClass('bld'); linked(this, 0, ['"+ndx+"_global','"+ndx+"_limit']);\"/><label for='"+ndx+"_enabled' id='lbl_"+ndx+"_enabled'>"+theUILang.Enabled+"</label></div>"+
-					"<div class='checkbox'><input type='checkbox' id='"+ndx+"_global' onchange=\"linked(this, 0, ['"+ndx+"_limit']);\"/><label for='"+ndx+"_global' id='lbl_"+ndx+"_global'>"+theUILang.exsGlobal+"</label></div>"+
-					"<div class='checkbox'><label for='"+ndx+"_limit' id='lbl_"+ndx+"_limit'>"+theUILang.exsLimit+":</label><input type='text' class='Textbox num' maxlength=6 id='"+ndx+"_limit'/></div>"+
-				"</div>";
-			optPublic +=
-				"<option value='"+ndx+"' id='opt_"+ndx+"'>"+ndx+"</option>";
+	$("#teglabel_select").on("change", function() {
+		switch (this.selectedIndex) {
+			case 0:
+				$("#teglabel").val("");
+				break;
+			case 1:
+				$(this).hide();
+				$("#teglabel").val("").show().trigger("focus");
+				$("#teglabel_return_select").show();
+				break;
+			default:
+				$("#teglabel").val(this.value);
+				break;
 		}
-		else
-		{
-			contPrivate +=  
-				"<div id='cont_"+ndx+"' class='seng_private'>"+
-					"<div class='checkbox'><input type='checkbox' id='"+ndx+"_enabled' onchange=\"$('#opt_"+ndx+"').toggleClass('bld'); linked(this, 0, ['"+ndx+"_global','"+ndx+"_limit']);\"/><label for='"+ndx+"_enabled' id='lbl_"+ndx+"_enabled'>"+theUILang.Enabled+"</label></div>"+
-					"<div class='checkbox'><input type='checkbox' id='"+ndx+"_global' onchange=\"linked(this, 0, ['"+ndx+"_limit']);\"/><label for='"+ndx+"_global' id='lbl_"+ndx+"_global'>"+theUILang.exsGlobal+"</label></div>"+
-					"<div class='checkbox'><label for='"+ndx+"_limit' id='lbl_"+ndx+"_limit'>"+theUILang.exsLimit+":</label><input type='text' class='Textbox num' maxlength=6 id='"+ndx+"_limit'/></div>";
-			if(val.cookies)
-			{
-				if(thePlugins.isInstalled("cookies"))
-					contPrivate+=		
-						"<div class='checkbox'><a href=\"javascript://void();\" onclick=\"theOptionsSwitcher.run(\'st_cookies\'); return(false);\">"+theUILang.exsCookies+":</a><input type='text' class='TextboxLarge' readOnly=true id='"+ndx+"_cookies' value='"+val.cookies+"'/></div>";
-				else
-				{
-					contPrivate+="<div class='checkbox'>"+theUILang.exsMustInstallCookies+"</div>";
-					toDisable.push(ndx);
-				}
-			}
-			else
-			if(val.auth)
-			{
-				if(thePlugins.isInstalled("loginmgr"))
-					contPrivate+=		
-						"<div class='checkbox'><a href=\"javascript://void();\" onclick=\"theOptionsSwitcher.run(\'st_loginmgr\'); return(false);\">"+theUILang.exsLoginMgr+"</a></div>";
-				else
-				{
-					contPrivate+="<div class='checkbox'>"+theUILang.exsMustInstallLoginMgr+"</div>";
-					toDisable.push(ndx);
-				}
-			}
-			contPrivate+=
-				"</div>";
-			optPrivate +=
-				"<option value='"+ndx+"' id='opt_"+ndx+"'>"+ndx+"</option>";
-		}
-		styles +=
-			(".Engine"+ndx+" {background-image: url(./plugins/extsearch/images/"+ndx+".png); background-repeat: no-repeat}\n");
 	});
-	if(contPublic.length)
-	{
-		s+="<fieldset><legend>"+theUILang.exsEngines+" ("+theUILang.extPublic+")</legend>";
-		s+="<select id='sel_public'>";
-		s+=optPublic;
-		s+="</select>";
-		s+=contPublic;
-		s+="</fieldset>";
+	$("#teglabel_return_select").on("click", function() {
+		$(this).hide();
+		$("#teglabel").val("").hide();
+		$("#teglabel_select").prop("selectedIndex", 0).show();
+	});
+	theDialogManager.setHandler("tegLoadTorrents", "beforeShow", () => {
+		$("#teglabel").val("").hide();
+		$("#teglabel_return_select").hide();
+		$("#teglabel_select").empty().append(
+			$("<option>").text(theUILang.No_label),
+			$("<option>").text(theUILang.newLabel),
+			...[...theWebUI.categoryList.torrentLabelTree.torrentLabels.keys()]
+				.map(lbl => $("<option>").val(lbl).text(lbl)),
+		).prop("selectedIndex", 0).show();
+	});
+
+	const commonSettings = $("<fieldset>").append(
+		$("<legend>").text(theUILang.exsGlobalLimit),
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12 col-md-3").append(
+				$("<label>").attr({for:"exs_limit", id:"lbl_exs_limit"}).text(theUILang.exsLimit + ":"),
+			),
+			$("<div>").addClass("col-12 col-md-9").append(
+				$("<input>").attr({type:"text", id:"exs_limit", maxlength:6}).addClass("Textbox num"),
+			),
+		),
+	);
+	const publicTrackers = $("<fieldset>").append(
+		$("<legend>").text(theUILang.exsEngines+" ("+theUILang.extPublic+")"),
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12").append(
+				$("<select>").attr({id:"sel_public"}),
+			),
+		),
+	);
+	const privateTrackers = $("<fieldset>").append(
+		$("<legend>").text(theUILang.exsEngines+" ("+theUILang.extPrivate+")"),
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12").append(
+				$("<select>").attr({id:"sel_private"}),
+			),
+		),
+	);
+	var toDisable = [];
+	$.each(theSearchEngines.sites, (ndx, val) => {
+		if (val.public) {
+			publicTrackers.append(
+				$("<div>").attr({id:`cont_${ndx}`}).addClass("row seng_public").append(
+					$("<div>").addClass("col-12").append(
+						$("<input>").attr({
+							type: "checkbox",
+							id: `${ndx}_enabled`,
+							onchange: "$('#opt_"+ndx+"').toggleClass('bld'); linked(this, 0, ['"+ndx+"_global','"+ndx+"_limit']);"
+						}),
+						$("<label>").attr({for:`${ndx}_enabled`, id:`lbl_${ndx}_enabled`}).text(theUILang.Enabled),
+					),
+					$("<div>").addClass("col-12").append(
+						$("<input>").attr({type:"checkbox", id:`${ndx}_global`, onchange:"linked(this, 0, ['"+ndx+"_limit']);"}),
+						$("<label>").attr({for:`${ndx}_global`, id:`lbl_${ndx}_global`}).text(theUILang.exsGlobal),
+					),
+					$("<div>").addClass("col-12 col-md-3").append(
+						$("<label>").attr({for:`${ndx}_limit`, id:`lbl_${ndx}_limit`}).text(theUILang.exsLimit + ":"),
+					),
+					$("<div>").addClass("col-12 col-md-9").append(
+						$("<input>").attr({type:"text", id:`${ndx}_limit`, maxlength:6}).addClass("Textbox num"),
+					),
+				),
+			);
+			publicTrackers.find("select").append(
+				$("<option>").attr({id:`opt_${ndx}`}).val(ndx).text(ndx),
+			);
+		} else {
+			privateTrackers.append(
+				$("<div>").attr({id:`cont_${ndx}`}).addClass("row seng_private").append(
+					$("<div>").addClass("col-12").append(
+						$("<input>").attr({type:"checkbox", id:`${ndx}_enabled`, onchange:"$('#opt_"+ndx+"').toggleClass('bld'); linked(this, 0, ['"+ndx+"_global','"+ndx+"_limit']);"}),
+						$("<label>").attr({for:`${ndx}_enabled`, id:`lbl_${ndx}_enabled`}).text(theUILang.Enabled),
+					),
+					$("<div>").addClass("col-12").append(
+						$("<input>").attr({type:"checkbox", id:`${ndx}_global`, onchange:"linked(this, 0, ['"+ndx+"_limit']);"}),
+						$("<label>").attr({for:`${ndx}_global`, id:`lbl_${ndx}_global`}).text(theUILang.exsGlobal),
+					),
+					$("<div>").addClass("col-12 col-md-3").append(
+						$("<label>").attr({for:`${ndx}_limit`, id:`lbl_${ndx}_limit`}).text(theUILang.exsLimit + ":"),
+					),
+					$("<div>").addClass("col-12 col-md-9").append(
+						$("<input>").attr({type:"text", id:`${ndx}_limit`, maxlength:6}).addClass("Textbox num"),
+					),
+				),
+			);
+			if (val.cookies) {
+				if (thePlugins.isInstalled("cookies")) {
+					privateTrackers.find(`#cont_${ndx}`).append(
+						$("<div>").addClass("checkbox").append(
+							$("<a>").attr({href:"#"}).on("click", () => theOptionsWindow.goToPage("st_cookies")).text(theUILang.exsCookies),
+							$("<input>").attr({type:"text", id:`${ndx}_cookies`}).val(val.cookies).prop("readonly", true),
+						),
+					);
+				} else {
+					privateTrackers.find(`#cont_${ndx}`).append(
+						$("<div>").addClass("checkbox").text(theUILang.exsMustInstallCookies),
+					);
+					toDisable.push(ndx);
+				}
+			} else if (val.auth) {
+				if (thePlugins.isInstalled("loginmgr")) {
+					privateTrackers.find(`#cont_${ndx}`).append(
+						$("<div>").addClass("checkbox").append(
+							$("<a>").attr({href:"#"}).on("click", () => theOptionsWindow.goToPage('st_loginmgr')).text(theUILang.exsLoginMgr),
+						),
+					);
+				} else {
+					privateTrackers.find(`#cont_${ndx}`).append(
+						$("<div>").addClass("checkbox").text(theUILang.exsMustInstallLoginMgr),
+					);
+					toDisable.push(ndx);
+				}
+			}
+			privateTrackers.find("select").append(
+				$("<option>").attr({id:`opt_${ndx}`}).val(ndx).text(ndx),
+			);
+		}
+	});
+	if (publicTrackers.find("div.row.seng_public").length < 1) {
+		publicTrackers.remove();
 	}
-	if(contPrivate.length)
-	{
-		s+="<fieldset><legend>"+theUILang.exsEngines+" ("+theUILang.extPrivate+")</legend>";
-		s+="<select id='sel_private'>";
-		s+=optPrivate;
-		s+="</select>";
-		s+=contPrivate;
-		s+="</fieldset>";
+	if (privateTrackers.find("div.row.seng_private").length < 1) {
+		privateTrackers.remove();
 	}
-	if(styles.length)
-		injectCSSText(styles);
-	this.attachPageToOptions($("<div>").attr("id","st_extsearch").html(s)[0],theUILang.exsSearch);
-	for( var i in toDisable )
-	{
+	this.attachPageToOptions(
+		$("<div>").attr("id","st_extsearch").append(
+			commonSettings, publicTrackers, privateTrackers,
+		)[0],
+		theUILang.exsSearch,
+	);
+	for (var i in toDisable) {
 		$('#'+toDisable[i]+'_enabled').prop("disabled",true).prop("checked",false);
 		$('#lbl_'+toDisable[i]+'_enabled').addClass("disabled");
 	}
-	$('#sel_public').change( function()
-	{
+	$('#sel_public').on('change', function() {
 		$(".seng_public").hide();
 		$('#cont_'+$(this).val()).show();
 	});
-	$('#sel_private').change( function()
-	{
+	$('#sel_private').on('change', function() {
 		$(".seng_private").hide();
 		$('#cont_'+$(this).val()).show();
 	});
-	var td = $$('rrow').insertCell(2);
-	s ="<select id='exscategory' title='"+theUILang.excat+"'></select>";
-	$(td).prop("id","exscat").html(s); 
+	$("<div>").attr({id:"exscat"}).append(
+		$("<select>").attr({id:"exscategory", title:theUILang.excat})
+	).insertBefore($("#mnu_go"));
 	plugin.markLoaded();
 	theSearchEngines.checkForIncorrectCurrent(true);
 	if(thePlugins.isInstalled('search'))
@@ -871,7 +950,7 @@ plugin.onRemove = function()
 	theSearchEngines.sites = plugin.sites;
 	theSearchEngines.current = -1;
 	theWebUI.save();
-	theWebUI.switchLabel($$("-_-_-all-_-_-"));
+	catlist.resetSelection();
 	for( var teg in plugin.tegs )
 		$("#"+teg).remove();
 	plugin.tegs = {};

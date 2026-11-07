@@ -1,218 +1,137 @@
-if(browser.isKonqueror && (browser.versionMajor<4))
-	plugin.disable();
-
 theWebUI.ratiosStat = {};
+
+class rTraficGraph extends rGraph {
+  create(aOwner, webuiView = "traf") {
+    this.down = {
+      label: "trafic_downloaded",
+      labelTranslation: theUILang.Downloaded,
+      lines: { show: false },
+      bars: { show: true },
+      data: [],
+      color: "#1C8DFF",
+    };
+    this.up = {
+      label: "trafic_uploaded",
+      labelTranslation: theUILang.Uploaded,
+      lines: { show: false },
+      bars: { show: true },
+      data: [],
+      color: "#009900",
+    };
+
+    this.oldDown = {
+      ...this.down,
+      label: "trafic_downloaded_old",
+      color: "#0849BB",
+      data: [],
+    };
+    this.oldUp = {
+      ...this.up,
+      label: "trafic_uploaded_old",
+      color: "#005500",
+      data: [],
+    };
+
+    this.datasets = [this.down, this.up, this.oldDown, this.oldUp];
+
+    this.xticks = [];
+
+    super.create(aOwner, webuiView);
+  }
+
+  yTickFormatter(n) {
+    return theConverter.bytes(n);
+  }
+
+  onHoverItemChanged(item) {
+    // show tooltip when hovering over datapoint
+    if (item)
+      rGraph.showTooltip(
+        item.pageX - 20,
+        item.pageY - 20,
+        (rGraph.legendLabelTranslations[item.series.label] ??
+          item.series.label) +
+        " = " +
+        theConverter.bytes(item.datapoint[1])
+      );
+    else rGraph.hideTooltip();
+  }
+
+  get options() {
+    const opts = super.options;
+    return {
+      ...opts,
+      xaxis: {
+        ...opts.xaxis,
+        ticks: this.xticks,
+      },
+    };
+  }
+
+  setData(trafData) {
+    this.down.data = [];
+    this.up.data = [];
+    this.oldDown.data = [];
+    this.oldUp.data = [];
+    this.xticks = [];
+    trafData.labels.forEach((label, index) => {
+      let xtick = "";
+      const data = {};
+      let actualDay = false;
+      if (label != 0) {
+        actualDay = trafData.mode === "day";
+
+        // const dt = new Date(trafData.labels[i]*1000-theWebUI.serverDeltaTime);
+        const dt = new Date(label * 1000);
+        const now = new Date(new Date().getTime() - theWebUI.deltaTime);
+        const [year, month, day, hours] = [
+          dt.getFullYear(),
+          dt.getMonth(),
+          dt.getDate(),
+          dt.getHours(),
+        ];
+        const [monthStr, dayStr, hourStr] = [month + 1, day, hours].map((num) =>
+          String(num).padStart(2, "0")
+        );
+        xtick = {
+          day: `${hourStr}:00`,
+          month: `${dayStr}.${monthStr}`,
+          year: `${monthStr}.${year}`,
+        }[trafData.mode];
+        const actual = {
+          day: day === now.getDate(),
+          month: month === now.getMonth(),
+          year: year === now.getFullYear(),
+        }[trafData.mode];
+
+        data[actual ? "up" : "oldUp"] = trafData.up[index];
+        data[actual ? "down" : "oldDown"] = trafData.down[index];
+      }
+      for (const prop of ["up", "down", "oldDown", "oldUp"]) {
+        this[prop].data.push([index, data[prop] ?? null]);
+      }
+      this.xticks.push([index + (actualDay ? 0 : 0.5), xtick]);
+    });
+    this.draw();
+  }
+
+	resize(newWidth, newHeight) {
+		if (!newWidth) {
+			newWidth = $("#traf").width();
+		}
+		if (!newHeight) {
+			newHeight = $("#traf").height() - $("#traf_graph_ctrl").height();
+		}
+		super.resize(newWidth, newHeight);
+	}
+}
 
 if(plugin.canChangeTabs())
 {
-
-	function rTraficGraph()
-	{
-	}
-
-	rTraficGraph.prototype.create = function( aOwner )
-	{
-		this.owner = aOwner;
-		this.owner.parent().css('overflow', 'hidden');
-		this.down = { label: theUILang.DL, bars: {"show": "true"}, data: [], color: "#1C8DFF" };
-		this.up = { label: theUILang.UL, bars: {"show": "true"}, data: [], color: "#009900" };
-
-		this.oldDown = { label: theUILang.DL, bars: {"show": "true"}, data: [], color: "#0849BB" };
-		this.oldUp = { label: theUILang.UL, bars: {"show": "true"}, data: [], color: "#005500" };
-
-		this.ticks = new Array();
-		this.previousPoint = null;
-		var rule = getCSSRule("div.graph_tab");
-		this.gridColor = rule ? rule.style.color : "#545454";
-		this.backgroundColor = rule ? rule.style.borderColor : null;
-
-		this.checked = [ true, true, true, true ];
-		this.datasets = [ this.down, this.up, this.oldDown, this.oldUp ];
-	}
-
-	rTraficGraph.prototype.getDataSets = function()
-	{
-		var ret = new Array();		
-		for( var i in this.checked )
-		{
-			if(this.checked[i])
-				ret.push(this.datasets[i]);
-			else
-			{
-				var arr = cloneObject( this.datasets[i] );
-				arr.data = [];
-				ret.push(arr);
-			}
-		}
-		return(ret);
-	}
-
-	rTraficGraph.prototype.draw = function()
-	{
-		var self = this;
-		$(function() 
-		{
-			if(self.owner.height() && self.owner.width())
-			{
-				clearCanvas( self.owner[0] );
-				self.owner.empty();
-
-				$.plot(self.owner,  self.getDataSets(),
-				{ 
-					colors: [ self.down.color, self.up.color, self.oldDown.color, self.oldUp.color ],
-					xaxis: 
-					{ 
-						ticks: self.ticks
-				 	},
-					grid:
-					{
-						backgroundColor: self.backgroundColor,
-						color: self.gridColor,
-						hoverable: true
-					},
-				  	yaxis: 
-				  	{ 
-				  		min: 0,
-	  					tickFormatter: function(n) { return(theConverter.bytes(n)) } 
-		  			}
-				});
-				function showTooltip(x, y, contents)
-				{
-        				$('<div id="tooltip">' + contents + '</div>').css( {
-						position: 'absolute',
-						display: 'none',
-						top: y + 5,
-						left: x + 5,
-						border: '1px solid #fdd',
-						padding: '2px',
-						'background-color': '#fee',
-						'color': 'black',
-						'font-size': '11px',
-						'font-weight': 'bold',
-						'font-family': 'Tahoma, Arial, Helvetica, sans-serif',
-						opacity: 0.80
-					}).appendTo("body").fadeIn(200);
-				}
-
-				self.owner.off("plothover");
-				self.owner.on("plothover", 
-					function (event, pos, item) 
-					{ 
-						if(item)
-						{
-							if(self.previousPoint != item.datapoint)
-							{
-								self.previousPoint = item.datapoint;
-								$("#tooltip").remove();
-								var y = item.datapoint[1];
-								showTooltip(item.pageX, item.pageY,
-									item.series.label + " = " + theConverter.bytes(y));
-							}
-						}
-						else
-						{
-							$("#tooltip").remove();
-							self.previousPoint = null;
-						}
-					}
-				);
-
-				$('#'+self.owner.attr('id')+' .legendColorBox').before("<td class='legendCheckBox'><input type='checkbox'></td>");
-				$.each($('#'+self.owner.attr('id')+' .legendCheckBox input'),function(ndx,element)
-				{
-					$(element).click( function() 
-					{
-						self.checked[ndx] = !self.checked[ndx];
-						self.draw();
-					}).prop("checked",self.checked[ndx]);
-				});
-			}
-		});
-	}
-
-	rTraficGraph.prototype.resize = function( newWidth, newHeight )
-	{
-		if(newWidth)
-			this.owner.width(newWidth-8);
-		if(newHeight)
-		{
-			newHeight-=(iv($$(this.owner.attr("id")+'_ctrl').style.height)+$("#tabbar").height());
-			if(newHeight>0)
-				this.owner.height(newHeight);
-		}
-		this.draw();
-	}
-
-	rTraficGraph.prototype.setData = function( arr )
-	{
-		this.down.data = new Array();
-		this.up.data = new Array();
-		this.oldDown.data = new Array();
-		this.oldUp.data = new Array();
-		this.ticks = new Array();
-		for(var i=0; i<arr.up.length; i++)
-		{
-			if(arr.labels[i]!=0)
-			{       	
-//				var dt = new Date(arr.labels[i]*1000-theWebUI.serverDeltaTime);
-				var dt = new Date(arr.labels[i]*1000);
-				var month = dt.getMonth()+1;
-				month = (month < 10) ? ("0" + month) : month;
-				var day = dt.getDate();
-				day = (day < 10) ? ("0" + day) : day;
-				var h = dt.getHours();
-				h = (h < 10) ? ("0" + h) : h;
-				var now = new Date();
-				now.setTime(now.getTime()-theWebUI.deltaTime);
-				var actualData = true;
-			
-			        switch(arr.mode)
-			        {
-					case 'day':
-						this.ticks.push([i,h+":00"]);
-						actualData = (now.getDate()==dt.getDate());
-						break;
-					case 'month':
-						this.ticks.push([i+0.5,day+"."+month]);
-						actualData = (now.getMonth()==dt.getMonth());
-						break;
-					case 'year':
-						this.ticks.push([i+0.5,month+"."+dt.getFullYear()]);
-						actualData = (now.getFullYear()==dt.getFullYear());
-						break;
-				}
-
-				if(actualData)
-				{
-					this.down.data.push([i,arr.down[i]]);
-					this.up.data.push([i,arr.up[i]]);
-					this.oldDown.data.push([i,null]);
-					this.oldUp.data.push([i,null]);
-				}
-				else
-				{
-					this.oldDown.data.push([i,arr.down[i]]);
-					this.oldUp.data.push([i,arr.up[i]]);
-					this.down.data.push([i,null]);
-					this.up.data.push([i,null]);
-				}
-			}
-			else
-			{
-				this.down.data.push([i,null]);
-				this.up.data.push([i,null]);
-				this.oldDown.data.push([i,null]);
-				this.oldUp.data.push([i,null]);
-				this.ticks.push([i+0.5,""]);
-			}
-		}
-		this.draw();
-	}
-
 	theWebUI.clearStats = function()
 	{
 		if(theWebUI.settings["webui.confirm_when_deleting"])
-			askYesNo( theUILang.ClearButton, theUILang.ClearQuest, "theWebUI.reqForTraficGraph(true)" );
+			askYesNo( theUILang.ClearButton, theUILang.ClearQuest, () => theWebUI.reqForTraficGraph(true) );
 		else
 			theWebUI.reqForTraficGraph(true);
 	}
@@ -227,17 +146,26 @@ if(plugin.canChangeTabs())
 		}
 	}
 
-	plugin.resizeBottom = theWebUI.resizeBottom;
-	theWebUI.resizeBottom = function( w, h )
-	{
-		if(plugin.enabled) 
-		{
-		        if(plugin.allStuffLoaded)
-				this.trafGraph.resize(w,h);
-			else
-				setTimeout( 'theWebUI.resize()', 1000 );
+	plugin.resizeLeft = theWebUI.resizeLeft;
+	theWebUI.resizeLeft = function(w) {
+		plugin.resizeLeft.call(this, w);
+		if (plugin.enabled) {
+			if (plugin.allStuffLoaded) {
+				this.trafGraph.resize();
+			} else
+				setTimeout('theWebUI.resize()', 1000);
 		}
-		plugin.resizeBottom.call(this,w,h);
+	}
+
+	plugin.resizeTop = theWebUI.resizeTop;
+	theWebUI.resizeTop = function(w, h) {
+		plugin.resizeTop.call(this, w, h);
+		if (plugin.enabled) {
+			if (plugin.allStuffLoaded) {
+				this.trafGraph.resize();
+			} else
+				setTimeout('theWebUI.resize()', 1000);
+		}
 	}
 
 	theWebUI.showTrafic = function(d)
@@ -254,8 +182,9 @@ if(plugin.canChangeTabs())
 			if(s!=$('#tracker_mode').val())
 				$('#tracker_mode').val('global');
 			$('#traf_mode').val(d.mode);
+			$('#traf_graph').show();
 			this.trafGraph.setData(d);
-		}			
+		}
 	}
 
 	rTorrentStub.prototype.gettrafic = function()
@@ -269,7 +198,7 @@ if(plugin.canChangeTabs())
 	if(plugin.collectStatForTorrents)
 	{
 		plugin.trtSelect = theWebUI.trtSelect;
-		theWebUI.trtSelect = function(e, id) 
+		theWebUI.trtSelect = function(e, id)
 		{
 			plugin.trtSelect.call(this,e,id);
 			if( (this.activeView == 'traf') && ($('#tracker_mode').val()=='none'))
@@ -281,9 +210,9 @@ if(plugin.canChangeTabs())
 if(plugin.canChangeColumns() && plugin.collectStatForTorrents)
 {
 	plugin.config = theWebUI.config;
-	theWebUI.config = function(data)
+	theWebUI.config = function()
 	{
-		this.tables.trt.columns.push({ text: 'Ratio/day', width: '75x', id: "ratioday", type: TYPE_NUMBER});
+		this.tables.trt.columns.push({ text: 'Ratio/day', width: '75px', id: "ratioday", type: TYPE_NUMBER});
 		this.tables.trt.columns.push({ text: 'Ratio/week', width: '75px', id: "ratioweek", type: TYPE_NUMBER});
 		this.tables.trt.columns.push({ text: 'Ratio/month', width: '75px', id: "ratiomonth", type: TYPE_NUMBER});
 		plugin.trtFormat = this.tables.trt.format;
@@ -297,16 +226,7 @@ if(plugin.canChangeColumns() && plugin.collectStatForTorrents)
 		        }
 			return(plugin.trtFormat(table,arr));
 		}
-		plugin.config.call(this,data);
-		plugin.reqId = theRequestManager.addRequest("trt", null, function(hash,torrent,value)
-		{
-			if($type(theWebUI.ratiosStat[hash]) && torrent.size)
-			{
-				torrent.ratioday = theWebUI.ratiosStat[hash][0]/torrent.size;
-				torrent.ratioweek = theWebUI.ratiosStat[hash][1]/torrent.size;
-				torrent.ratiomonth = theWebUI.ratiosStat[hash][2]/torrent.size;
-			}
-		});
+		plugin.config.call(this);
 		plugin.trtRenameColumn();
 	}
 
@@ -325,7 +245,7 @@ if(plugin.canChangeColumns() && plugin.collectStatForTorrents)
 		else
 			setTimeout(arguments.callee,1000);
 	}
-        
+
 	plugin.rssRenameColumn = function()
 	{
 		if(theWebUI.getTable("rss").created)
@@ -352,12 +272,27 @@ if(plugin.canChangeColumns() && plugin.collectStatForTorrents)
 
 	plugin.startRatios = function()
 	{
-		theWebUI.request("?action=getratios",[plugin.updateRatios, this]);	
+		theWebUI.request("?action=getratios",[plugin.updateRatios, this]);
 	}
 
 	plugin.updateRatios = function( d )
 	{
 		window.setTimeout( plugin.startRatios, plugin.updateInterval*60000 );
+	}
+
+	plugin.addTorrents = theWebUI.addTorrents;
+	theWebUI.addTorrents = function(data)
+	{
+		$.each(data.torrents, function(hash,torrent)
+		{
+			if($type(theWebUI.ratiosStat[hash]) && torrent.size)
+			{
+				torrent.ratioday = theWebUI.ratiosStat[hash][0]/torrent.size;
+				torrent.ratioweek = theWebUI.ratiosStat[hash][1]/torrent.size;
+				torrent.ratiomonth = theWebUI.ratiosStat[hash][2]/torrent.size;
+			}
+		});
+		plugin.addTorrents.call(this, data);
 	}
 
 	rTorrentStub.prototype.getratios = function()
@@ -374,35 +309,48 @@ plugin.onLangLoaded = function()
 {
 	if(this.canChangeTabs())
 	{
-	 	this.attachPageToTabs(
-			$('<div>').attr("id","traf").html(
-				"<div id='traf_graph_ctrl' class='graph_tab' align=right style='height:30px;'>"+
-					(plugin.disableClearButton ? "" : "<input type='button' value='"+theUILang.ClearButton+"' class='Button' onclick='theWebUI.clearStats();return(false);'>")+
-					"<select name='tracker_mode' id='tracker_mode' onchange='theWebUI.reqForTraficGraph()'>"+
-						"<option value='global' selected>"+theUILang.allTrackers+"</option>"+
-					"</select>"+
-					"<select name='traf_mode' id='traf_mode' onchange='theWebUI.reqForTraficGraph()'>"+
-						"<option value='day'>"+theUILang.perDay+"</option>"+
-						"<option value='month'>"+theUILang.perMonth+"</option>"+
-						"<option value='year'>"+theUILang.perYear+"</option>"+
-					"</select>"+
-				"</div><div id='traf_graph' class='graph_tab'></div>").get(0),theUILang.traf,"lcont");
-		theWebUI.trafGraph = new rTraficGraph();
-		theWebUI.trafGraph.create($("#traf_graph"));
 		plugin.onShow = theTabs.onShow;
 		theTabs.onShow = function(id)
 		{
 			if(id=="traf")
 			{
-				if(theWebUI.activeView!="traf")
+				if(theWebUI.activeView!="traf" || !theWebUI.trafGraph.xticks.length) {
 					theWebUI.reqForTraficGraph();
-				else
-					theWebUI.trafGraph.resize();
+				}
+				theWebUI.trafGraph.resize();
 			}
 			else
 				plugin.onShow.call(this,id);
 		};
-       		theWebUI.resize();
+	 	this.attachPageToTabs(
+			$('<div>').attr("id","traf").addClass("graph_tab").append(
+				$("<div>").attr({id:"traf_graph_ctrl"}).addClass("d-flex flex-row").append(
+					plugin.disableClearButton ? $() : $("<button>").attr({type:"button", onclick: "theWebUI.clearStats();return(false);"}).text(theUILang.ClearButton),
+					$("<select>").attr({
+						name:"tracker_mode",
+						id:"tracker_mode",
+						onchange:"theWebUI.reqForTraficGraph()",
+					}).addClass("ms-auto me-1 w-auto flex-grow-0").append(
+						$("<option>").prop("selected", true).val("global").text(theUILang.allTrackers),
+					),
+					$("<select>").attr({
+						name:"traf_mode",
+						id:"traf_mode",
+						onchange:"theWebUI.reqForTraficGraph()",
+					}).addClass("mx-0 w-auto flex-grow-0").append(
+						$("<option>").val("day").text(theUILang.perDay),
+						$("<option>").val("month").text(theUILang.perMonth),
+						$("<option>").val("year").text(theUILang.perYear),
+					),
+				),
+				$("<div>").attr({id:"traf_graph"}),
+			)[0],
+			theUILang.traf,
+			"lcont",
+		);
+		theWebUI.trafGraph = new rTraficGraph();
+		theWebUI.trafGraph.create($("#traf_graph"));
+		theWebUI.resize();
 	}
 };
 
@@ -421,7 +369,13 @@ plugin.onRemove = function()
 			theWebUI.getTable("rss").removeColumnById("ratioday");
 			theWebUI.getTable("rss").removeColumnById("ratioweek");
 			theWebUI.getTable("rss").removeColumnById("ratiomonth");
-		}		
+		}
+		if(thePlugins.isInstalled("extsearch"))
+		{
+			theWebUI.getTable("teg").removeColumnById("ratioday");
+			theWebUI.getTable("teg").removeColumnById("ratioweek");
+			theWebUI.getTable("teg").removeColumnById("ratiomonth");
+		}
 	}
 }
 

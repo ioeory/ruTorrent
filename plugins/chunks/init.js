@@ -2,30 +2,30 @@ plugin.loadLang();
 plugin.loadMainCSS();
 
 plugin.updateDetails = theWebUI.updateDetails;
-theWebUI.updateDetails = function() 
+theWebUI.updateDetails = function()
 {
 	plugin.updateDetails.call(this);
 	if((this.activeView == 'Chunks') && plugin.enabled && plugin.allStuffLoaded)
 	{
-		if (this.dID != "") 
+		if (this.dID != "")
 		{
 			plugin.hash = this.dID;
 			this.request( "?action=getchunks", [plugin.drawChunks, plugin]);
-		} 
+		}
 		else
 			plugin.clearChunks();
 	}
 }
 
 plugin.clearDetails = theWebUI.clearDetails;
-theWebUI.clearDetails = function() 
+theWebUI.clearDetails = function()
 {
 	plugin.clearDetails.call(theWebUI);
 	if(plugin.enabled && plugin.allStuffLoaded)
 		plugin.clearChunks();
 }
 
-plugin.drawChunks = function( d ) 
+plugin.drawChunks = function( d )
 {
 	if( $('#cCont').get(0).clientWidth && ($type(d.chunks) || $type(d.seen)) )
 	{
@@ -49,10 +49,10 @@ plugin.drawChunks = function( d )
 		var k = mode;
 		var sumAvail = 0;
 		var sumBitAvail = 0;
-		for(var i=0; i < numRows; i++) 
+		for(var i=0; i < numRows; i++)
 		{
 			var tRow = mustInsert ? table.insertRow(-1) : table.rows[i];
-			for(var j=0; j < numCols && (k<cells.length); j++, k++) 
+			for(var j=0; j < numCols && (k<cells.length); j++, k++)
 			{
 	    			var tCell = mustInsert ? tRow.insertCell(-1) : tRow.cells[j];
 				var chunk = cells.charAt( k );
@@ -61,7 +61,7 @@ plugin.drawChunks = function( d )
     				else
 					tCell.innerHTML = "&nbsp;";
 				tCell.className = "cCell Cell" + chunk;
-				if(mode) 
+				if(mode)
 				{
 					var val = parseInt(chunk,16);
 					sumAvail+=val;
@@ -82,7 +82,7 @@ plugin.drawChunks = function( d )
 	d = null;
 }
 
-plugin.clearChunks = function() 
+plugin.clearChunks = function()
 {
 	$('#cTable').empty();
 	$('#ccount').text('');
@@ -92,7 +92,7 @@ plugin.clearChunks = function()
 	$('#clegend').text( '' );
 }
 
-rTorrentStub.prototype.getchunks = function() 
+rTorrentStub.prototype.getchunks = function()
 {
 	var commands = ["d.get_bitfield", "d.get_chunk_size", "d.get_size_chunks"];
 	if(theWebUI.systemInfo.rTorrent.apiVersion>=4)
@@ -105,58 +105,51 @@ rTorrentStub.prototype.getchunks = function()
 	}
 }
 
-rTorrentStub.prototype.getchunksResponse = function(xml) 
+rTorrentStub.prototype.getchunksParseXML = function(xml)
 {
 	if(plugin.hash!=theWebUI.dID)
-	        return({});
-	var datas = xml.getElementsByTagName('data');
-	var data = datas[0];
-	var values = data.getElementsByTagName('value');
-	var ret = { chunks: this.getValue(values,1), size: this.getValue(values,3), tsize: this.getValue(values,5) }
+		return({});
+	const values = this.getXMLValues(xml, 2, 1)[0];
+	var ret = { chunks: values[0], size: values[1], tsize: values[2] }
 	if(theWebUI.systemInfo.rTorrent.apiVersion>=4)
-		ret.seen = this.getValue(values,7);
+		ret.seen = values[3];
 	return(ret);
 }
 
-plugin.resizeBottom = theWebUI.resizeBottom;
-theWebUI.resizeBottom = function( w, h )
-{
-	if(plugin.enabled) 
-	{
-	        if(theWebUI.configured)
-	        {
-	        	if(h)
-		        	$('#cCont').height(h-50);
-		}
-		else
-			setTimeout( 'theWebUI.resize()', 1000 );
-	}
-	plugin.resizeBottom.call(this,w,h);
-}
-
-plugin.onLangLoaded = function() 
-{
+plugin.onLangLoaded = function() {
 	plugin.attachPageToTabs(
 		$("<div>").attr("id","Chunks").append(
-			$("<div>").attr("id","cHeader").html( 
-				"<table width='100%'><tr>"+
-				"<td class='sthdr'>"+theUILang.chunksCount+":</td>"+
-				"<td class='stval' id='ccount'>&nbsp;</td>"+
-				"<td class='sthdr'>"+theUILang.chunkSize+":</td>"+
-				"<td class='stval' id='csize'>&nbsp;</td>"+
-				"<td class='sthdr' id='cinfohdr'>"+theUILang.cDownloaded+":</td>"+
-				"<td class='stval' id='cinfo'>&nbsp;</td>"+
-				"<td class='sthdr'>"+theUILang.cLegend+":</td>"+
-				"<td class='stval' id='clegend'>&nbsp;</td>"+
-				"<td align='right' id='cmode_cont' class='sthdr'>"+
-					theUILang.cMode+":&nbsp;"+
-					"<select name='chunks_mode' id='chunks_mode' onchange='theWebUI.updateDetails()'>"+
-						"<option value='0' selected>"+theUILang.cDownloaded+"</option>"+
-						"<option value='1'>"+theUILang.cAvail+"</option>"+
-					"</select>"+
-				"</td></tr></table>").append(
-			$("<div>").attr("id","cCont").append( 
-				$("<table>").attr("id","cTable")))).get(0), theUILang.Chunks,"lcont");
+			$("<div>").addClass("d-flex flex-row justify-content-between align-items-center").append(
+				...[
+					[theUILang.chunksCount, undefined, "ccount"],
+					[theUILang.chunkSize, undefined, "csize"],
+					[theUILang.cDownloaded, "cinfohdr", "cinfo"],
+					[theUILang.cLegend, undefined, "clegend"],
+				].flatMap(([headerName, headerId, valueId]) => [
+					$("<div>").addClass("sthdr").append(
+						$("<span>").attr({id:headerId}).text(headerName + ":"),
+					),
+					$("<div>").addClass("stval").append(
+						$("<span>").attr({id:valueId}).text(""),
+					),
+				]),
+				$("<div>").addClass("sthdr").append(
+					$("<span>").attr({id:"cmode_cont"}).text(theUILang.cMode + ":"),
+				),
+				$("<div>").addClass("stval").append(
+					$("<select>").attr({name:"chunks_mode", id:"chunks_mode", onchange:"theWebUI.updateDetails();"}).append(
+						$("<option>").val(0).text(theUILang.cDownloaded),
+						$("<option>").val(1).text(theUILang.cAvail),
+					),
+				),
+			),
+			$("<div>").attr("id","cCont").append(
+				$("<table>").attr("id","cTable")
+			)
+		).get(0),
+		theUILang.Chunks,
+		"lcont",
+	);
 	if(theWebUI.systemInfo.rTorrent.apiVersion<4)
 		$('#cmode_cont').empty();
 }

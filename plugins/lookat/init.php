@@ -1,10 +1,10 @@
 <?php
 
-eval(getPluginConf('lookat'));
+eval(FileUtil::getPluginConf('lookat'));
 
-require_once( "lookat.php" );
+require_once("lookat.php");
 
-$theSettings->registerPlugin($plugin["name"],$pInfo["perms"]);
+$theSettings->registerPlugin($plugin["name"], $pInfo["perms"]);
 $look = rLook::load();
-$jResult.=('plugin.lookData='.$look->get().';');
-$jResult.=('plugin.partsToRemove='.quoteAndDeslashEachItem($partsToRemove).';');
+$jResult .= ('plugin.lookData=' . $look->get() . ';');
+$jResult .= ('plugin.partsToRemove=' . Utility::quoteAndDeslashEachItem($partsToRemove) . ';');

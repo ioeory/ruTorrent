@@ -1,16 +1,45 @@
-div#tcreate {width: 405px; height: 360px}
-div#tcreate div.dlg-header {background-image: url(./images/create16.gif)}
-div#tcreate #path_edit {width: 305px}
-div#tcreate textarea#trackers {width: 230px; height: 70px; border: 1px solid #D0D0D0; font-size: 11px; font-family: Tahoma, Arial, Helvetica, sans-serif; cursor: text}
-div#tcreate fieldset div {line-height: 16px}
+#create {background: url(../../images/toolbar.png) -48px center}
+#tcreate-header {background-image: url(./images/create16.gif)}
+#tcreate textarea {resize: none; height: 8rem;}
 
-div#tcreate label {width: 120px; display: block; float: left; margin-top: 5px; margin-bottom: 5px; margin-left: 10px; }
-div#tcreate label.nomargin { margin-top: 0px; margin-bottom: 0px; }
-div#tcreate input, select {margin-top: 5px; margin-bottom: 5px;}
-div#tcreate br {clear: left; line-height: 0}
+#recentTrackers {
+  width: 130px;
+  display: flex;
+  align-items: center;
+}
+#recentTrackers::after {margin-left: auto;}
+#deleteFromRecentTrackers {text-align: left;}
 
-div#tcreate iframe {border-width: 1px; width:170px; height:200px; visibility:hidden; position:absolute; z-index:100;}
+/* Custom break point settings for responsiveness */
 
-#browse_path {width: 30px;}
+/* X-Small devices (portrait phones, less than 576px) */
+/* No media query for `xs` since this is the default in Bootstrap */
+/* Custom rules for medium devices */
+#tcreate {min-width: 90vw;}
 
-#recentTrackers { float: left; width: 130px }
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) {
+  /* Custom rules for small devices */
+  #tcreate {min-width: 518px;}
+  #tcreate textarea {height: 16rem;}
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+  /* Custom rules for medium devices */
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+  /* Custom rules for large devices */
+}
+
+/* X-Large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+  /* Custom rules for x-large devices */
+}
+
+/* XX-Large devices (larger desktops, 1400px and up) */
+@media (min-width: 1400px) {
+  /* Custom rules for xx-large devices */
+}

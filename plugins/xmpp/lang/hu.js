@@ -3,18 +3,18 @@
  *
  * Hungarian language file.
  *
- * Author: 
+ * Author:
  */
 
  var s_PluginFail			= "Plugin will not work.";
 
- theUILang.xmpp 			= "XMPP";
- theUILang.xmppJabberJID 		= "JID:";
- theUILang.xmppJabberFor 		= "Recipient:";
+ theUILang.xmpp				= "XMPP";
+ theUILang.xmppJabberJID		= "JID:";
+ theUILang.xmppJabberFor		= "Recipient:";
  theUILang.xmppMessage			= "Message:";
  theUILang.xmppJabberPasswd		= "Password:";
- theUILang.xmppAdvancedSettings		= "Advanced:";
- theUILang.xmppJabberHost		= "Host:";
+ theUILang.xmppAdvancedSettings		= "Advanced";
+ theUILang.xmppJabberHost		= "Host";
  theUILang.xmppJabberPort		= "Port";
  theUILang.xmppUseEncryption		= "Use encryption";
 

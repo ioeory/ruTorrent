@@ -6,7 +6,7 @@
  * Author: Dare (piczok@gmail.com)
  */
 
- theUILang.checkTorrent 	= "Sprawdź aktualizacje";
+ theUILang.checkTorrent		= "Sprawdź aktualizacje";
  theUILang.chkHdr		= "Sprawdź aktualizacje torrenta";
  theUILang.checkedAt		= "Ostatnio sprawdzane";
  theUILang.checkedResult	= "Wynik";
@@ -17,7 +17,8 @@
  				  "Prawdopodobnie usunięte",
  				  "Błąd podczas próby dostępu do trackera",
  				  "Błąd interakcji z rTorrentem",
- 				  "Nie potrzeba"
+ 				  "Nie potrzeba",
+ 				  "Zignorowano"
  				  ];
 
 thePlugins.get("rutracker_check").langLoaded();

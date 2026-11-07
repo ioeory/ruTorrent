@@ -3,20 +3,29 @@ plugin.loadMainCSS();
 
 plugin.setValue = function( full, free )
 {
-        var percent = iv(full ? (full-free)/full*100 : 0);
-        if(percent>100)
-	        percent = 100;
+	var used = full-free;
+	var percent = iv(full ? used/full*100 : 0);
+	if(percent>100)
+		percent = 100;
 	$("#meter-disk-value").width( percent+"%" ).css( { "background-color": (new RGBackground()).setGradient(this.prgStartColor,this.prgEndColor,percent).getColor(),
 		visibility: !percent ? "hidden" : "visible" } );
-	$("#meter-disk-text").text(percent+'%');
-	$("#meter-disk-td").prop("title", theConverter.bytes(free)+"/"+theConverter.bytes(full));
+	if(plugin.freeBytesInMeter) $("#meter-disk-text").text(theConverter.bytes(free));
+	else $("#meter-disk-text").text(percent+'%');
+	if(theUILang.diskUsage) {
+		$("#meter-disk-pane").prop("title",
+			theUILang.diskUsage
+				.replace(/%USED%/, theConverter.bytes(used))
+				.replace(/%TOTAL%/, theConverter.bytes(full))
+				.replace(/%FREE%/, theConverter.bytes(free) + ", " + iv(full ? free/full*100 : 0) + "%")
+		);
+	}
 
 	if($.noty && plugin.allStuffLoaded)
 	{
 		if((free<plugin.notifySpaceLimit) && !plugin.noty)
 			plugin.noty = $.noty(
 			{
-				text: theUILang.diskNotification, 
+				text: theUILang.diskNotification,
 				layout : 'bottomLeft',
 				type: 'error',
 				timeout : false,
@@ -36,13 +45,21 @@ plugin.init = function()
 	{
 		plugin.prgStartColor = new RGBackground("#99D699");
 		plugin.prgEndColor = new RGBackground("#E69999");
-		plugin.addPaneToStatusbar( "meter-disk-td", $("<div>").attr("id","meter-disk-holder").
-			append( $("<span></span>").attr("id","meter-disk-text").css({overflow: "visible"}) ).
-			append( $("<div>").attr("id","meter-disk-value").css({ visibility: "hidden", float: "left" }).width(0).html("&nbsp;") ).get(0) );
+		plugin.addPaneToStatusbar(
+			"meter-disk-pane",
+			$("<div>").append(
+				$("<div>").addClass("icon"),
+				$("<div>").attr({id: "meter-disk-holder"}).append(
+					$("<div>").attr({id: "meter-disk-value"}).width(0),
+					$("<div>").attr({id: "meter-disk-text"}),
+				),
+			),
+			1, true,
+		);
 
 		plugin.check = function()
 		{
-			var AjaxReq = jQuery.ajax(
+			jQuery.ajax(
 			{
 				type: "GET",
 				timeout: theWebUI.settings["webui.reqtimeout"],
@@ -50,7 +67,6 @@ plugin.init = function()
 			        cache: false,
 				url : "plugins/diskspace/action.php",
 				dataType : "json",
-				cache: false,
 				success : function(data)
 				{
 					plugin.setValue( data.total, data.free );
@@ -70,7 +86,7 @@ plugin.init = function()
 
 plugin.onRemove = function()
 {
-	plugin.removePaneFromStatusbar("meter-disk-td");
+	plugin.removePaneFromStatusbar("meter-disk-pane");
 	if(plugin.diskTimeout)
 	{
 		window.clearTimeout(plugin.diskTimeout);

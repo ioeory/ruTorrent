@@ -3,157 +3,231 @@
  *
  */
 
-function makeContent()
-{
-	$(".cat").mouseclick(theWebUI.labelContextMenu);
+function makeContent() {
 	$("#st_up").mouseclick(theWebUI.upRateMenu);
 	$("#st_down").mouseclick(theWebUI.downRateMenu);
 
-	$("#mnu_add").attr("title",theUILang.mnu_add+"...");
-	$("#mnu_remove").attr("title",theUILang.mnu_remove);
-	$("#mnu_start").attr("title",theUILang.mnu_start);
-	$("#mnu_pause").attr("title",theUILang.mnu_pause);
-	$("#mnu_stop").attr("title",theUILang.mnu_stop);
-	$("#mnu_settings").attr("title",theUILang.mnu_settings+"...");
-	$("#mnu_search").attr("title",theUILang.mnu_search+"...");
-	$("#mnu_go").attr("title",theUILang.mnu_go);
-	$("#mnu_help").attr("title",theUILang.mnu_help+"...");
-
-	$("#query").keydown( function(e) 
-	{
-		if(e.keyCode == 13) 
-			theSearchEngines.run();
+	[
+		"add", "remove", "start", "pause", "stop",
+		"settings", "search", "go", "help"
+	].forEach(id => {
+		$(`#mnu_${id}`).attr({title:theUILang[`mnu_${id}`] + "..."}).append(
+			$("<span>").addClass("d-inline d-md-none").text(theUILang[`mnu_${id}`]),
+		);
 	});
 
-	new DnD("HDivider",
-	{
-		left : function() { return(60); },
-		right : function() { return( $(window).width()-20 ); },
-		restrictY : true,
-		maskId : "dividerDrag",
-		onStart : function(e) { return(theWebUI.settings["webui.show_cats"]); },
-		onRun : function(e) { $(document.body).css( "cursor", "e-resize" ); },
-		onFinish : function(e) 
-		{
-		        var self = e.data;
-			var w = self.mask.offset().left-2;
-			theWebUI.resizeLeft(w,null);	
-			w = $(window).width()-w-11;
-			theWebUI.resizeTop(w,null);
-      		        theWebUI.resizeBottom(w,null);
+	$("#offcanvas-sidepanel-label").text("ruTorrent v" + theWebUI.version);
+
+	new DnD("HDivider", {
+		// Restrict both x and y direction so that the `onRun()` function
+		// won't set the position of the divider bar.
+		// This will work because when `theWebUI` resizes, the divider bar
+		// is automatically placed between the side panel and the main content.
+		restrictX: true,
+		restrictY: true,
+		onStart: function(e) {return $("#offcanvas-sidepanel").css("display") !== "none";},
+		onRun: function(e) {
+			theWebUI.resizeLeft(e.clientX);
+		},
+		onFinish: function(e) {
 			theWebUI.setHSplitter();
-			$(document.body).css( "cursor", "default" );
-		}
+		},
 	});
 
-	new DnD("VDivider",
-	{
-		top : function() { return(60); },
-		bottom : function() { return( $(window).height()-60 ); },
-		restrictX : true,
-		maskId : "dividerDrag",
-		onStart : function(e) { return(theWebUI.settings["webui.show_dets"]); },
-		onRun : function(e) { $(document.body).css( "cursor", "n-resize" ); },
-		onFinish : function(e) 
-		{
-		        var self = e.data;
-		        var offs = self.mask.offset();
-      		        theWebUI.resizeTop(null,offs.top-($("#t").is(":visible") ?  $("#t").height() : -1)-8);
-      		        theWebUI.resizeBottom(null,$(window).height()-offs.top-$("#StatusBar").height()-14);
-      		        theWebUI.setVSplitter();
-			$(document.body).css( "cursor", "default" );
-		}
+	new DnD("VDivider", {
+		// Restrict both direction. See comments above for the `HDivider` divider bar.
+		restrictX: true,
+		restrictY: true,
+		onStart: function(e) {return $("#tdetails").css("display") !== "none";},
+		onRun: function(e) {
+			theWebUI.resizeTop(null, e.clientY - $("#list-table").offset().top);
+		},
+		onFinish: function(e) {
+			theWebUI.setVSplitter();
+		},
 	});
 
-	$(document.body).append($("<iframe name='uploadfrm'/>").css({visibility: "hidden"}).attr( { name: "uploadfrm" } ).width(0).height(0).load(function()
-	{
-		$("#torrent_file").val("");
-		$("#add_button").prop("disabled",false);
-		var d = (this.contentDocument || this.contentWindow.document);
-		if(d && (d.location.href != "about:blank"))
-		{
-			try { var txt = d.body.textContent ? d.body.textContent : d.body.innerText; eval(txt); } catch(e) {}
-		}
+	// One toast per item. The input is cleared only after a confirmed
+	// success, so a refusal leaves it to be corrected and sent again, and
+	// the send button is restored for this form alone.
+	var addTorrentFinished = function(frame, input, button, isEmpty) {
+		var answer = uploadFrameAnswer(frame);
+		if(answer === null)
+			return;
+		var added = false;
+		uploadResults(answer).forEach(function(result) {
+			noty(result.text, result.kind);
+			added = added || (result.kind == "success");
+		});
+		if(added)
+			$(input).val("");
+		$(button).prop("disabled", isEmpty());
+	};
+	$(document.body).append($("<iframe name='uploadfrm'/>").css({visibility: "hidden"}).attr( { name: "uploadfrm" } ).width(0).height(0).on('load', function() {
+		addTorrentFinished(this, "#torrent_file", "#add_button",
+			() => !$$("torrent_file").files || ($$("torrent_file").files.length === 0));
 	}));
-	$(document.body).append($("<iframe name='uploadfrmurl'/>").css({visibility: "hidden"}).attr( { name: "uploadfrmurl" } ).width(0).height(0).load(function()
-	{
-		$("#url").val("");
-		var d = (this.contentDocument || this.contentWindow.document);
-		if(d.location.href != "about:blank")
-			try { eval(d.body.textContent ? d.body.textContent : d.body.innerText); } catch(e) {}
+	$(document.body).append($("<iframe name='uploadfrmurl'/>").css({visibility: "hidden"}).attr( { name: "uploadfrmurl" } ).width(0).height(0).on('load', function() {
+		addTorrentFinished(this, "#url", "#add_url", () => $("#url").val().trim() === "");
 	}));
+
+	const paddContent = $("<div>").addClass("cont").append(
+		$("<fieldset>").append(
+			$("<legend>").text(theUILang.peerAddLabel),
+			$("<div>").addClass("row").append(
+				$("<div>").addClass("col-12").append(
+					$("<input>").attr({type:"text", id:"peerIP", placeholder:"my.friend.addr:6881"}),
+				),
+			),
+		),
+	);
+	const paddButtons = $("<div>").addClass("buttons-list").append(
+		$("<button>").attr({type:"button"}).addClass("OK").on("click", () => {theWebUI.addNewPeer(); theDialogManager.hide('padd'); return false;}).text(theUILang.ok),
+		$("<button>").attr({type:"button"}).addClass("Cancel").text(theUILang.Cancel),
+	);
 	theDialogManager.make("padd",theUILang.peerAdd,
-		'<div class="content fxcaret">'+theUILang.peerAddLabel+'<br><input type="text" id="peerIP" class="Textbox" value="my.friend.addr:6881"/></div>'+
-		'<div class="aright buttons-list"><input type="button" class="OK Button" value="'+theUILang.ok+'" onclick="theWebUI.addNewPeer();theDialogManager.hide(\'padd\');return(false);" />'+
-			'<input type="button" class="Cancel Button" value="'+theUILang.Cancel+'"/></div>',
-		true);
+		[paddContent, paddButtons],
+		true,
+	);
 	theDialogManager.make("tadd",theUILang.torrent_add,
-		'<div class="cont fxcaret">'+
-			'<form action="addtorrent.php" id="addtorrent" method="post" enctype="multipart/form-data" target="uploadfrm">'+
-				'<label>'+theUILang.Base_directory+':</label><input type="text" id="dir_edit" name="dir_edit" class="TextboxLarge"/><br/>'+
-				'<span id="not_add_path_option">'+
-				'<label>&nbsp;</label><input type="checkbox" name="not_add_path" id="not_add_path"/>'+theUILang.Dont_add_tname+'<br/>'+
-				'</span>'+
-				'<span id="torrents_start_stopped_option">'+
-				'<label>&nbsp;</label><input type="checkbox" name="torrents_start_stopped" id="torrents_start_stopped"/>'+theUILang.Dnt_start_down_auto+'<br/>'+
-				'</span>'+
-				'<span id="fast_resume_option">'+
-				'<label>&nbsp;</label><input type="checkbox" name="fast_resume" id="fast_resume"/>'+theUILang.doFastResume+'<br/>'+
-				'</span>'+
-				'<span id="randomize_hash_option">'+				
-				'<label>&nbsp;</label><input type="checkbox" name="randomize_hash" id="randomize_hash"/>'+theUILang.doRandomizeHash+'<br/>'+
-				'</span>'+				
-				'<label>'+theUILang.Label+':</label><input type="text" id="tadd_label" name="tadd_label" class="TextboxLarge" /><select id="tadd_label_select"></select><br/>'+
-				'<hr/>'+
-				'<label>'+theUILang.Torrent_file+':</label><input type="file" multiple="multiple" name="torrent_file[]" id="torrent_file" accept=".torrent,application/x-bittorrent" class="TextboxLarge"/><br/>'+
-				'<label>&nbsp;</label><input type="submit" value="'+theUILang.add_button+'" id="add_button" class="Button" /><br/>'+
-			'</form>'+
-			'<hr/>'+
-			'<form action="addtorrent.php" id="addtorrenturl" method="post" target="uploadfrmurl">'+
-				'<label>'+theUILang.Torrent_URL+':</label><input type="text" id="url" name="url" class="TextboxLarge"/><br/>'+
-				'<label>&nbsp;</label><input type="submit" id="add_url" value="'+theUILang.add_url+'" class="Button" disabled="true"/>'+
-			'</form>'+
-		'</div>');
+		$("<div>").addClass("cont").append(
+			$("<form>").attr(
+				{action: "addtorrent.php", id: "addtorrent", method: "post", enctype: "multipart/form-data", target: "uploadfrm"}
+			).append(
+				$("<fieldset>").attr({id: "torrent_options"}).append(
+					$("<legend>").text(theUILang.Torrent_options),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("d-none col-md-3 d-md-flex justify-content-end").append(
+							$("<label>").attr({for: "dir_edit"}).text(theUILang.Base_directory + ": "),
+						),
+						$("<div>").addClass("col-md-9").append(
+							$("<input>").attr(
+								{type: "text", id: "dir_edit", name: "dir_edit", placeholder: theUILang.Base_directory}
+							).addClass("flex-grow-1"),
+						),
+					),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("col-md-9 offset-md-3 d-flex flex-column align-items-start").append(
+							...[
+								["not_add_path", theUILang.Dont_add_tname],
+								["torrents_start_stopped", theUILang.Dnt_start_down_auto],
+								["fast_resume", theUILang.doFastResume],
+								["randomize_hash", theUILang.doRandomizeHash],
+							].map(([id, label]) => $("<div>").attr({id: id + "_option"}).addClass("d-flex").append(
+									$("<input>").attr({type: "checkbox", name: id, id: id}),
+									$("<label>").attr({for: id}).text(label),
+								)
+							),
+						)
+					),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("d-none col-md-3 d-md-flex justify-content-end").append(
+							$("<label>").attr({for: "tadd_label"}).text(theUILang.Label + ": "),
+						),
+						$("<div>").addClass("col-md-7").append(
+							$("<input>").attr({type: "text", id: "tadd_label", name: "tadd_label", placeholder: theUILang.Label}).addClass("flex-grow-1"),
+							$("<select>").attr({id: "tadd_label_select"}).addClass("flex-grow-1"),
+						),
+						$("<div>").addClass("col-md-2").append(
+							$("<button>").attr({type: "button", id: "tadd-return-select", name: "tadd-return-select"}).text(theUILang.Return_select_label),
+						),
+					),
+				),
+				$("<fieldset>").append(
+					$("<legend>").text(theUILang.Add_from_file),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("d-none col-md-3 d-md-flex justify-content-end").append(
+							$("<label>").attr({for: "torrent_file"}).text(theUILang.Torrent_file + ": "),
+						),
+						$("<div>").addClass("col-md-6").append(
+							$("<input>")
+								.attr({type: "file", multiple: "multiple", name: "torrent_file[]", id: "torrent_file", accept: ".torrent"})
+								.on("change", (ev) => {$("#add_button").prop("disabled", ev.target.files.length === 0);})
+								.addClass("flex-shrink-1"),
+						),
+						$("<div>").addClass("col-md-3").append(
+							$("<input>").val(theUILang.add_button).attr({type: "submit", id: "add_button"}).addClass("Button").prop("disabled", true),
+						),
+					),
+				),
+			),
+			$("<form>").attr(
+				{action: "addtorrent.php", id: "addtorrenturl", method: "post", target: "uploadfrmurl"}
+			).append(
+				$("<fieldset>").append(
+					$("<legend>").text(theUILang.Add_from_URL),
+					$("<div>").addClass("row").append(
+						$("<div>").addClass("d-none col-md-3 d-md-flex justify-content-end").append(
+							$("<label>").attr({for: "url"}).text(theUILang.Torrent_URL + ": "),
+						),
+						$("<div>").addClass("col-md-6").append(
+							$("<textarea>")
+								.attr({id: "url", name: "url", placeholder: theUILang.Torrent_URL_multiline, rows: 4})
+								.on("input", (ev) => {$('#add_url').prop('disabled', ev.target.value.trim() === '');})
+								.addClass("flex-grow-1"),
+						),
+						$("<div>").addClass("col-md-3").append(
+							$("<input>").val(theUILang.add_url).attr({type: "submit", id: "add_url"}).addClass("Button").prop("disabled", true),
+						),
+					),
+				),
+			),
+		),
+  );
 
-	$("#tadd_label_select").change( function(e)
-	{
-		var index = this.selectedIndex;
-		switch (index) 
-		{
-			case 1:
-			{
+	$("#tadd_label_select").on('change', function(e) {
+		const index = this.selectedIndex;
+		switch (index) {
+			case 1: {
 				$(this).hide();
 				$("#tadd_label").show();
-			}
-			case 0:
-			{
+				$("#tadd-return-select").show();
+			} break;
+			case 0: {
 				$("#tadd_label").val("");
-				break;
-			}				
-			default:
-			{
+			} break;
+			default: {
 				$("#tadd_label").val(this.options[index].value);
-				break;
-			}
-		}			
+			} break;
+		}
 	});
 
-	theDialogManager.setHandler('tadd','beforeShow',function()
-	{
+	$("#tadd-return-select").on("click", function(e) {
+		$(this).hide();
+		$("#tadd_label").val("").hide();
+		$("#tadd_label_select").prop("selectedIndex", 0);
+		$("#tadd_label_select").show();
+	});
+
+	theDialogManager.setHandler('tadd', 'beforeShow', function() {
 		$("#tadd_label").hide();
-		$("#tadd_label_select").empty()
-			.append('<option selected>'+theUILang.No_label+'</option>')
-			.append('<option>'+theUILang.newLabel+'</option>').show();
-		for (var lbl in theWebUI.cLabels)
-			$("#tadd_label_select").append("<option>"+lbl+"</option>");
-		$("#add_button").prop("disabled",false);
+		$("#tadd-return-select").hide();
+		$("#tadd_label_select").empty().append(
+			$("<option>").attr("selected", "selected").text(theUILang.No_label),
+			$("<option>").text(theUILang.newLabel),
+			...[...theWebUI.categoryList.torrentLabelTree.torrentLabels.keys()]
+				.map(torrentLabel => $("<option>").val(torrentLabel).text(torrentLabel)),
+		).show();
+		$("#torrent_file").val("");
+		$("#add_button").prop("disabled", true);
+		$("#tadd_label_select").trigger('change');
+		// toggle default add torrent options
+		[
+			"not_add_path", "torrents_start_stopped",
+			"fast_resume", "randomize_hash",
+		].filter(ele => $$(ele)).forEach(ele => $$(ele).checked = !!theWebUI.settings["webui." + ele]);
 	});
 
-	var input = $$('url');
-	input.onupdate = input.onkeyup = function() { $('#add_url').prop('disabled',$.trim(input.value)==''); };
-	input.onpaste = function() { setTimeout( input.onupdate, 10 ) };
-	var makeAddRequest = function(frm)
-	{
+	// save add torrent options before closing dialog window
+	theDialogManager.setHandler("tadd", "beforeHide", () => {
+		[
+			"not_add_path", "torrents_start_stopped",
+			"fast_resume", "randomize_hash",
+		].filter(ele => $$(ele)).forEach(ele => theWebUI.settings["webui." + ele] = $$(ele).checked);
+		theWebUI.save();
+	});
+
+	var makeAddRequest = function(frm) {
 		var s = theURLs.AddTorrentURL;
 		var req = []
 		if($("#torrents_start_stopped").prop("checked"))
@@ -164,467 +238,205 @@ function makeContent()
 			req.push('not_add_path=1');
 		if($("#randomize_hash").prop("checked"))
 			req.push('randomize_hash=1');
-		var dir = $.trim($("#dir_edit").val());
-		if(dir.length)
-			req.push('dir_edit='+encodeURIComponent(dir));
-		var lbl = $.trim($("#tadd_label").val());
-		if(lbl.length)
-			req.push('label='+encodeURIComponent(lbl));
+		var dirEle = $$("dir_edit");
+		if (dirEle) {
+			var dir = dirEle.value.trim();
+			if(dir.length)
+				req.push('dir_edit='+encodeURIComponent(dir));
+		}
+		var lblEle = $$("tadd_label");
+		if (lblEle) {
+			var lbl = lblEle.value.trim();
+			if(lbl.length)
+				req.push('label='+encodeURIComponent(lbl));
+		}
 		if(req.length)
 			s+=('?'+req.join('&'));
 		frm.action = s;
-		return(true);
+		return true;
 	}
-	$("#addtorrent").submit(function()
-	{
-		if(!$("#torrent_file").val().match(/\.torrent$/i)) 
-		{
+	$("#addtorrent").on('submit', function() {
+		if (!$("#torrent_file").val().match(/\.torrent$/i)) {
 			alert(theUILang.Not_torrent_file);
-	   		return(false);
+	   		return false;
    		}
-		$("#add_button").prop("disabled",true);
-		return(makeAddRequest(this));
+		$("#add_button").prop("disabled", true);
+		return makeAddRequest(this);
 	});
-	$("#addtorrenturl").submit(function()
-	{
-	   	$("#add_url").prop("disabled",true);
-	   	return(makeAddRequest(this));
+	$("#addtorrenturl").on('submit', function() {
+	   	$("#add_url").prop("disabled", true);
+	   	return makeAddRequest(this);
 	});
-	theDialogManager.make("dlgProps",theUILang.Torrent_properties,
-		'<div class="content fxcaret">'+
-			'<fieldset>'+
-				'<legend>'+theUILang.Bandwidth_sett+'</legend>'+
-				'<div><input type="text" id="prop-ulslots" />'+theUILang.Number_ul_slots+':</div>'+
-				'<div style="clear:right"><input type="text" id="prop-peers_min" />'+theUILang.Number_Peers_min+':</div>'+
-				'<div style="clear:right"><input type="text" id="prop-peers_max" />'+theUILang.Number_Peers_max+':</div>'+
-				'<div style="clear:right"><input type="text" id="prop-tracker_numwant" />'+theUILang.Tracker_Numwant+':</div>'+
-				'<div class="props-spacer">'+
-					'<input type="checkbox" id="prop-pex" /><label for="prop-pex" id="lbl_prop-pex">'+theUILang.Peer_ex+'</label>'+
-					'<input type="checkbox" id="prop-superseed" /><label for="prop-superseed" id="lbl_prop-superseed">'+theUILang.SuperSeed+'</label>'+
-				'</div>'+
-			'</fieldset>'+
-		'</div>'+
-		'<div class="aright buttons-list"><input type="button" value="'+theUILang.ok+'" class="OK Button" onclick="theWebUI.setProperties(); return(false);" /><input type="button" value="'+theUILang.Cancel+'" class="Cancel Button"/></div>',
-		true);
-	theDialogManager.make("dlgHelp",theUILang.Help,
-		'<div class="content">'+
-				'<table width=100% border=0>'+
-					'<tr><td><strong>F1</strong></td><td>'+theUILang.This_screen+'</td></tr>'+
-					'<tr><td><strong><strong>Ctrl-F1</strong></td><td><a href="javascript://void();" onclick="theDialogManager.toggle(\'dlgAbout\'); return(false);">'+theUILang.About_program+'</a></td></tr>'+
-					'<tr><td><strong><strong>F4</strong></td><td><a href="javascript://void();" onclick="theWebUI.toggleMenu(); return(false);">'+theUILang.Toggle_menu+'</a></td></tr>'+
-					'<tr><td><strong><strong>F6</strong></td><td><a href="javascript://void();" onclick="theWebUI.toggleDetails(); return(false);">'+theUILang.Toggle_details+'</a></td></tr>'+
-					'<tr><td><strong><strong>F7</strong></td><td><a href="javascript://void();" onclick="theWebUI.toggleCategories(); return(false);">'+theUILang.Toggle_categories+'</a></td></tr>'+
-					'<tr><td><strong><strong>Ctrl-O</strong></td><td><a href="javascript://void();" onclick="theWebUI.showAdd(); return(false);">'+theUILang.torrent_add+'</a></td></tr>'+
-					'<tr><td><strong><strong>Ctrl-P</strong></td><td><a href="javascript://void();" onclick="theWebUI.showSettings(); return(false);">'+theUILang.ruTorrent_settings+'</a></td></tr>'+
-					'<tr><td><strong><strong>Del</strong></td><td>'+theUILang.Delete_current_torrents+'</td></tr>'+
-					'<tr><td><strong><strong>Ctrl-A</strong></td><td>'+theUILang.Select_all+'</td></tr>'+
-					'<tr><td><strong><strong>Ctrl-Z</strong></td><td>'+theUILang.Deselect_all+'</td></tr>'+
-				'</table>'+
-		'</div>');
-	theDialogManager.make("dlgAbout","ruTorrent v"+theWebUI.version,
-		'<div class="content"> <strong>'+theUILang.Developers+'</strong>:<br/><br/>'+
-			'&nbsp;&nbsp;&nbsp;Original &micro;Torrent WebUI:<br/>'+
-			'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Carsten Niebuhr (Directrix)<br/><br/>'+
-			'&nbsp;&nbsp;&nbsp;rTorrent adaptation (ruTorrent):<br/>'+
-			'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Moskalets Alexander (<a href="mailto:novik65@gmail.com">Novik</a>)<br/>'+
-			'<br/>'+
-			'<strong>'+theUILang.Check_new_version+'&nbsp;<a href="https://github.com/Novik/ruTorrent" target=_blank>'+theUILang.here+'</a></strong><br/>'+
-			'<br/>'+
-			'<center><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2KEV2MSBTF99U" target=_blank><img src="images/btn_donate.gif" border=0/></a></center>'+
-		'</div>');
-	theDialogManager.make("dlgLabel",theUILang.enterLabel,
-		'<div class="content fxcaret">'+theUILang.Enter_label_prom+':<br/>'+
-			'<input type="text" id="txtLabel" class="Textbox"/></div>'+
-		'<div class="aright buttons-list"><input type="button" class="OK Button" value="'+theUILang.ok+'" onclick="theWebUI.createLabel();theDialogManager.hide(\'dlgLabel\');return(false);" />'+
-			'<input type="button" class="Cancel Button" value="'+theUILang.Cancel+'"/></div>',
-		true);
-	theDialogManager.setHandler('dlgLabel','afterShow',function()
-	{
-		setTimeout(function(){$("#txtLabel").off('focus').on('focus',function() { $(this).select(); } ).focus();}, 0);
+
+	const dlgPropsContent = $("<div>").addClass("cont").append(
+		$("<fieldset>").append(
+			$("<legend>").text(theUILang.Bandwidth_sett),
+			$("<div>").addClass("row").append(
+				...[
+					["prop-ulslots", theUILang.Number_ul_slots],
+					["prop-peers_min", theUILang.Number_Peers_min],
+					["prop-peers_max", theUILang.Number_Peers_max],
+					["prop-tracker_numwant", theUILang.Tracker_Numwant],
+				].flatMap(([id, text]) => [
+					$("<div>").addClass("col-12 col-md-6").append(
+						$("<label>").attr({for:id}).text(text + ": "),
+					),
+					$("<div>").addClass("col-12 col-md-6").append(
+						$("<input>").attr({type:"text", id:id,})
+					),
+				]),
+				...[
+					["prop-pex", theUILang.Peer_ex],
+					["prop-superseed", theUILang.SuperSeed],
+				].map(([id, text]) => $("<div>").addClass("col-12 col-md-6").append(
+					$("<input>").attr({type:"checkbox", id:id}),
+					$("<label>").attr({for:id, id:`lbl_${id}`}).text(text),
+				)),
+			),
+		),
+	);
+	const dlgPropsButtons = $("<div>").addClass("buttons-list").append(
+		$("<button>").attr({type:"button"}).addClass("OK").on("click", () => {theWebUI.setProperties(); return false;}).text(theUILang.ok),
+		$("<button>").attr({type:"button"}).addClass("Cancel").text(theUILang.Cancel),
+	);
+	theDialogManager.make("dlgProps", theUILang.Torrent_properties,
+		[dlgPropsContent, dlgPropsButtons],
+		true,
+	);
+	theDialogManager.make("dlgHelp", theUILang.Help,
+		$("<div>").addClass("py-2 container-fluid").append(
+			$("<div>").addClass("row").append(
+				...[
+					["F1", theUILang.This_screen,],
+					["Ctrl-F1", theUILang.About_program, 'theDialogManager.toggle("dlgAbout"); return(false);'],
+					["F4", theUILang.Toggle_menu, "theWebUI.toggleMenu(); return(false);"],
+					["F6", theUILang.Toggle_details, "theWebUI.toggleDetails(); return(false);"],
+					["F7", theUILang.Toggle_categories, "theWebUI.toggleCategories(); return(false);"],
+					["Ctrl-O", theUILang.torrent_add, "theWebUI.showAdd(); return(false);"],
+					["Ctrl-P", theUILang.ruTorrent_settings, "theWebUI.showSettings(); return(false);"],
+					["Ctrl-F", theUILang.Quick_search,],
+					["Del", theUILang.Delete_current_torrents,],
+					["Ctrl-A", theUILang.Select_all,],
+					["Ctrl-Z", theUILang.Deselect_all,],
+				].flatMap(([keyboard, text, action]) => [
+					$("<div>").addClass("col-4").append(
+						$("<span>").addClass("fw-bold").text(keyboard),
+					),
+					$("<div>").addClass("col-8").append(
+						action ?
+						$("<a>").attr({href:"#", onclick:action}).text(text) :
+						$("<span>").text(text)
+					),
+				]),
+			),
+		),
+	);
+	theDialogManager.make("dlgAbout", "ruTorrent v" + theWebUI.version,
+		$("<div>").addClass("py-2 container-fluid").append(
+			$("<div>").addClass("row").append(
+				$("<div>").addClass("col-12 pb-3").append(
+					$("<strong>").text(theUILang.Developers + ": "),
+				),
+				$("<div>").addClass("col-11 offset-1").append(
+					$("<span>").text(theUILang.Original_webui + ": "),
+				),
+				$("<div>").addClass("col-10 offset-2").append(
+					$("<span>").text("Carsten Niebuhr (Directrix)"),
+				),
+				$("<div>").addClass("col-11 offset-1").append(
+					$("<span>").text(theUILang.rTorrent_adaption + ": "),
+				),
+				$("<div>").addClass("col-10 offset-2").append(
+					$("<span>").text("Moskalets Alexander ("),
+					$("<a>").attr({href:"mailto:novik65@gmail.com"}).text("Novik"),
+					$("<span>").text(")")
+				),
+				$("<div>").addClass("pt-3 col-12").append(
+					$("<strong>").text(theUILang.Check_new_version),
+					$("<span>").html("&nbsp;"),
+					$("<a>").attr({href:"https://github.com/Novik/ruTorrent", target:"_blank"}).text(theUILang.here),
+				),
+			),
+		),
+	);
+
+	const dlgLabelContent = $("<div>").addClass("cont").append(
+		$("<div>").addClass("row").append(
+			$("<div>").addClass("col-12").append(
+				$("<label>").attr({for:"txtLabel"}).text(theUILang.Enter_label_prom + ": "),
+			),
+			$("<div>").addClass("col-12").append(
+				$("<input>").attr({type:"text", id:"txtLabel"}),
+			),
+		),
+	);
+	const dlgLabelButtons = $("<div>").addClass("buttons-list").append(
+		$("<button>").attr({type:"button"}).addClass("OK").on("click", () => {theWebUI.createLabel(); theDialogManager.hide('dlgLabel'); return false;}).text(theUILang.ok),
+		$("<button>").attr({type:"button"}).addClass("Cancel").text(theUILang.Cancel),
+	);
+	theDialogManager.make("dlgLabel", theUILang.enterLabel,
+		[dlgLabelContent, dlgLabelButtons],
+		true,
+	);
+	theDialogManager.setHandler('dlgLabel', 'afterShow', function() {
+		setTimeout(function() {
+			$("#txtLabel").off('focus').on('focus',function() {
+				$(this).select();
+			}).trigger('focus');
+		}, 0);
 	});
 	theDialogManager.make("yesnoDlg","",
-		'<div class="content" id="yesnoDlg-content"></div>'+
-		'<div id="yesnoDlg-buttons" class="aright buttons-list"><input type="button" class="OK Button" value="'+theUILang.ok+'" id="yesnoOK">'+
-		'<input type="button" class="Button Cancel" value="'+theUILang.Cancel+'" id="yesnoCancel"></div>',
-		true);
-	var languages = '';
-	for (var i in AvailableLanguages)
-		languages+="<option value='"+i+"'>"+AvailableLanguages[i]+"</option>";
-	var retries = '';
-	for (var i in theUILang.retryOnErrorList)
-		retries+="<option value='"+i+"'>"+theUILang.retryOnErrorList[i]+"</option>";
+		[
+			$("<div>").attr({id:"yesnoDlg-content"}).addClass("cont"),
+			$("<div>").attr({id:"yesnoDlg-buttons"}).addClass("buttons-list").append(
+				$("<button>").attr({type:"button", id:"yesnoOK"}).addClass("OK").text(theUILang.ok),
+				$("<button>").attr({type:"button", id:"yesnoCancel"}).addClass("Cancel").text(theUILang.Cancel),
+			),
+		],
+		true,
+	);
+
 	theDialogManager.make("stg",theUILang.ruTorrent_settings,
-		'<div id="stg_c" class="fxcaret">'+
-			"<div class=\"lm\">"+
-				"<ul>"+
-					"<li class=\"first\"><a id=\"mnu_st_gl\" href=\"javascript://void();\" onclick=\"theOptionsSwitcher.run(\'st_gl\'); return(false);\" class=\"focus\">"+
-						theUILang.General+
-					"</a></li>"+
-					"<li id='hld_st_dl'><a id=\"mnu_st_dl\" href=\"javascript://void();\" onclick=\"theOptionsSwitcher.run(\'st_dl\'); return(false);\">"+
-						theUILang.Downloads+
-					"</a></li>"+
-					"<li id='hld_st_con'><a id=\"mnu_st_con\" href=\"javascript://void();\" onclick=\"theOptionsSwitcher.run(\'st_con\'); return(false);\">"+
-						theUILang.Connection+
-					"</a></li>"+
-					"<li id='hld_st_bt'><a id=\"mnu_st_bt\" href=\"javascript://void();\" onclick=\"theOptionsSwitcher.run(\'st_bt\'); return(false);\">"+
-						theUILang.BitTorrent+
-					"</a></li>"+
-					"<li  id='hld_st_ao' class=\"last\"><a id=\"mnu_st_ao\" href=\"javascript://void();\" onclick=\"theOptionsSwitcher.run(\'st_ao\'); return(false);\">"+
-						theUILang.Advanced+
-					"</a></li>"+
-				"</ul>"+
-			"</div>"+
-			"<div id=\"st_gl\" class=\"stg_con\">"+
-				"<fieldset>"+
-					"<legend>"+theUILang.User_Interface+"</legend>"+
-					"<div class=\"op50l\">"+
-						"<input type=\"checkbox\" id=\"webui.confirm_when_deleting\" checked=\"true\" />"+
-						"<label for=\"webui.confirm_when_deleting\">"+theUILang.Confirm_del_torr+"</label>"+
-					"</div>"+
-					"<div class=\"op50l algnright\">"+
-						theUILang.Update_GUI_every+":&nbsp;<input type=\"text\" id=\"webui.update_interval\" class=\"TextboxShort\" value=\"3000\" />"+
-						theUILang.ms+
-					"</div>"+
-					"<div class=\"op50l\"><input type=\"checkbox\" id=\"webui.alternate_color\" />"+
-						"<label for=\"webui.alternate_color\">"+theUILang.Alt_list_bckgnd+"</label>"+
-					"</div>"+
-					"<div class=\"op50l algnright\">"+
-						theUILang.ReqTimeout+":&nbsp;<input type=\"text\" id=\"webui.reqtimeout\" class=\"TextboxShort\" value=\"5000\" />"+
-						theUILang.ms+
-					"</div>"+
-					"<div class=\"op50l\"><input type=\"checkbox\" id=\"webui.show_cats\" checked=\"true\" />"+
-						"<label for=\"webui.show_cats\">"+theUILang.Show_cat_start+"</label>"+
-					"</div>"+
-					"<div class=\"op50l algnright\"><input type=\"checkbox\" id=\"webui.show_dets\" checked=\"true\" />"+
-						"<label for=\"webui.show_dets\">"+theUILang.Show_det_start+"</label>"+
-					"</div>"+
-					"<div class=\"op50l\"><input type=\"checkbox\" id=\"webui.needmessage\"/>"+
-						"<label for=\"webui.needmessage\">"+theUILang.GetTrackerMessage+"</label>"+
-					"</div>"+
+		$("<div>").attr({id: "stg_c"}).addClass("cont").append(
+			$("<div>").addClass("lm list-group"),
+			$("<div>").attr({id: "stg-pages"}).addClass("tab-content").append(
+				$("<div>").attr({id: "st_btns"}).addClass("buttons-list").append(
+					$("<button>").text(theUILang.ok).on("click", () => {theDialogManager.hide('stg'); theWebUI.setSettings(); return false;}),
+					$("<button>").text(theUILang.Cancel).addClass("Cancel"),
+				),
+			),
+		),
+	);
 
-					"<div class=\"op50l algnright\">"+
-						"<label for=\"webui.dateformat\">"+theUILang.DateFormat+":</label>&nbsp;"+
-						"<select id=\"webui.dateformat\">"+
-							"<option value='0'>31.12.2011</option>"+
-							"<option value='1'>2011-12-31</option>"+
-							"<option value='2'>12/31/2011</option>"+
-						"</select>"+
-					"</div>"+
+	theOptionsWindow.init();
+}
 
-					"<div class=\"op50l\">"+
-						"<label for=\"webui.ignore_timeouts\">"+"<input type=\"checkbox\" id=\"webui.ignore_timeouts\" checked=\"true\" />"+theUILang.dontShowTimeouts+"</label>"+
-					"</div>"+
+function hasThemeHint() {
+	return 'theme-hint' in window.localStorage;
+}
 
-					"<div class=\"op50l algnright\"><input type=\"checkbox\" id=\"webui.effects\"/>"+
-						"<label for=\"webui.effects\">"+theUILang.UIEffects+"</label>"+
-					"</div>"+
-					"<div class=\"op50l\"><input type=\"checkbox\" id=\"webui.fullrows\"  onchange=\"linked(this, 1, ['webui.no_delaying_draw']);\"/>"+
-						"<label for=\"webui.fullrows\">"+theUILang.fullTableRender+"</label>"+
-					"</div>"+
+function setThemeHint(dark) {
+	const theme = dark ? 'dark-theme' : 'light-theme';
+	const previousTheme = window.localStorage['theme-hint'];
+	if (theme !== previousTheme) {
+		window.localStorage['theme-hint'] = theme;
+		$(':root').removeClass(previousTheme).addClass(theme);
+	}
+}
 
-					"<div class=\"op50l algnright\"><input type=\"checkbox\" id=\"webui.speedintitle\"/>"+
-						"<label for=\"webui.speedintitle\">"+theUILang.showSpeedInTitle+"</label>"+
-					"</div>"+					
-
-					"<div class=\"op100l\"><input type=\"checkbox\" id=\"webui.no_delaying_draw\"/>"+
-						"<label for=\"webui.no_delaying_draw\" id=\"lbl_webui.no_delaying_draw\" >"+theUILang.showScrollTables+"</label>"+
-					"</div>"+
-					"<div class=\"op100l\"><input type=\"checkbox\" id=\"webui.log_autoswitch\"/>"+
-						"<label for=\"webui.log_autoswitch\" id=\"lbl_webui.log_autoswitch\" >"+theUILang.logAutoSwitch+"</label>"+
-					"</div>"+
-					"<div class=\"op100l\"><input type=\"checkbox\" id=\"webui.show_labelsize\"/>"+
-						"<label for=\"webui.show_labelsize\" id=\"lbl_webui.show_labelsize\" >"+theUILang.showLabelSize+"</label>"+
-					"</div>"+
-					"<div class=\"op100l\"><input type=\"checkbox\" id=\"webui.register_magnet\"/>"+
-						"<label for=\"webui.register_magnet\" id=\"lbl_webui.register_magnet\" >"+theUILang.registerMagnet+"</label>"+
-					"</div>"+
-					"<div class=\"op100l\">"+
-						"<label for=\"webui.retry_on_error\">"+theUILang.retryOnErrorTitle+":</label>&nbsp;"+
-						"<select id=\"webui.retry_on_error\">"+
-							retries+
-						"</select>"+
-					"</div>"+
-					"<div class=\"op50l\">"+
-						"<label for=\"webui.lang\">"+theUILang.mnu_lang+":</label>&nbsp;"+
-						"<select id=\"webui.lang\">"+
-							languages+
-						"</select>"+
-					"</div>"+
-				"</fieldset>"+
-				"<fieldset>"+
-					"<legend>"+theUILang.speedList+"</legend>"+
-					"<table>"+
-						"<tr>"+
-							"<td>"+theUILang.UL+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"webui.speedlistul\" class=\"Textbox speedEdit\" maxlength=\"128\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.DL+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"webui.speedlistdl\" class=\"Textbox speedEdit\" maxlength=\"128\" /></td>"+
-						"</tr>"+
-					"</table>"+
-				"</fieldset>"+
-			"</div>"+
-			"<div id=\"st_dl\" class=\"stg_con\">"+
-				"<fieldset>"+
-					"<legend>"+theUILang.Bandwidth_sett+"</legend>"+
-					"<table>"+
-						"<tr>"+
-							"<td>"+theUILang.Number_ul_slots+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_uploads\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Number_Peers_min+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"min_peers\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Number_Peers_max+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_peers\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Number_Peers_For_Seeds_min+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"min_peers_seed\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Number_Peers_For_Seeds_max+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_peers_seed\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Tracker_Numwant+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"tracker_numwant\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-					"</table>"+
-				"</fieldset>"+
-				"<fieldset>"+
-					"<legend>"+theUILang.Other_sett+"</legend>"+
-					"<table>"+
-						"<tr>"+
-							"<td><input id=\"check_hash\" type=\"checkbox\"/>"+
-								"<label for=\"check_hash\">"+theUILang.Check_hash+"</label>"+
-							"</td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Directory_For_Dl+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"directory\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-						"</tr>"+
-					"</table>"+
-				"</fieldset>"+
-			"</div>"+
-			"<div id=\"st_con\" class=\"stg_con\">"+
-				"<div>"+
-					"<input id=\"port_open\" type=\"checkbox\" onchange=\"linked(this, 0, ['port_range', 'port_random']);\" />"+
-					"<label for=\"port_open\">"+
-						theUILang.Enable_port_open+
-					"</label>"+
-				"</div>"+
-				"<fieldset>"+
-					"<legend>"+theUILang.Listening_Port+"</legend>"+
-					"<table>"+
-						"<tr>"+
-							"<td><label id=\"lbl_port_range\" for=\"port_range\" class=\"disabled\">"+theUILang.Port_f_incom_conns+":</label></td>"+
-							"<td class=\"alr\">"+
-								"<input type=\"text\" id=\"port_range\" class=\"TextboxShort\" class=\"disabled\" maxlength=\"13\" />"+
-							"</td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td colspan=\"2\">"+
-								"<input id=\"port_random\" type=\"checkbox\"  class=\"disabled\"/>"+
-								"<label  id=\"lbl_port_random\" for=\"port_random\"  class=\"disabled\">"+theUILang.Rnd_port_torr_start+"</label>"+
-							"</td>"+
-						"</tr>"+
-					"</table>"+
-				"</fieldset>"+
-				"<fieldset>"+
-					"<legend>"+theUILang.Bandwidth_Limiting+"</legend>"+
-					"<table>"+
-						"<tr>"+
-							"<td>"+theUILang.Global_max_upl+" ("+theUILang.KB + "/" + theUILang.s+"): [0: "+theUILang.unlimited+"]</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"upload_rate\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Glob_max_downl+" ("+theUILang.KB + "/" + theUILang.s+"): [0: "+theUILang.unlimited+"]</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"download_rate\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-					"</table>"+
-				"</fieldset>"+
-				"<fieldset>"+
-					"<legend>"+theUILang.Other_Limiting+"</legend>"+
-					"<table>"+
-						"<tr>"+
-							"<td>"+theUILang.Number_ul_slots+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_uploads_global\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Number_dl_slots+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_downloads_global\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Glob_max_memory+" ("+theUILang.MB+"):</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_memory_usage\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Glob_max_files+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_open_files\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Glob_max_http+":</td>"+
-							"<td class=\"alr\"><input type=\"text\" id=\"max_open_http\" class=\"Textbox num\" maxlength=\"6\" /></td>"+
-						"</tr>"+
-					"</table>"+
-				"</fieldset>"+
-			"</div>"+
-			"<div id=\"st_bt\" class=\"stg_con\">"+
-				"<fieldset>"+
-					"<legend>"+theUILang.Add_bittor_featrs+"</legend>"+
-					"<table>"+
-						"<tr>"+
-							"<td><input id=\"dht\" type=\"checkbox\"  onchange=\"linked(this, 0, ['dht_port']);\" />"+
-								"<label for=\"dht\">"+theUILang.En_DHT_ntw+"</label>"+
-						"</td>"+
-							"<td><input id=\"peer_exchange\" type=\"checkbox\" />"+
-								"<label for=\"peer_exchange\">"+theUILang.Peer_exch+"</label>"+
-							"</td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td id=\"lbl_dht_port\" class=\"disabled\">"+theUILang.dht_port+":</td>"+
-							"<td><input type=\"text\" id=\"dht_port\" class=\"Textbox num\" maxlength=\"6\" class=\"disabled\"/></td>"+
-						"</tr>"+
-						"<tr>"+
-							"<td>"+theUILang.Ip_report_track+":</td>"+
-							"<td><input type=\"text\" id=\"ip\" class=\"Textbox str\" maxlength=\"50\" /></td>"+
-						"</tr>"+
-					"</table>"+
-				"</fieldset>"+
-			"</div>"+
-			"<div id=\"st_ao\" class=\"stg_con\">"+
-				"<fieldset>"+
-					"<legend>"+theUILang.Advanced+"</legend>"+
-					"<div id=\"st_ao_h\">"+
-						"<table width=\"99%\" cellpadding=\"0\" cellspacing=\"0\">"+
-							"<tr>"+
-								"<td>hash_interval</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"hash_interval\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>hash_max_tries</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"hash_max_tries\" class=\"Textbox num\" maxlength=\"5\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>hash_read_ahead</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"hash_read_ahead\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>http_cacert</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"http_cacert\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>http_capath</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"http_capath\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>max_downloads_div</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"max_downloads_div\" class=\"Textbox num\" maxlength=\"5\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>max_uploads_div</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"max_uploads_div\" class=\"Textbox num\" maxlength=\"5\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>max_file_size</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"max_file_size\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>preload_type</td>"+
-								"<td class=\"alr\">"+
-									"<select id=\"preload_type\">"+
-										"<option value=\"0\" selected=\"selected\">off</option>"+
-										"<option value=\"1\">madvise</option>"+
-										"<option value=\"2\">direct paging</option>"+
-									"</select>"+
-								"</td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>preload_min_size</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"preload_min_size\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>preload_required_rate</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"preload_required_rate\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>receive_buffer_size</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"receive_buffer_size\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>send_buffer_size</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"send_buffer_size\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td><label for=\"safe_sync\">safe_sync</label></td>"+
-								"<td class=\"alr\"><input type=\"checkbox\" id=\"safe_sync\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>timeout_safe_sync</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"timeout_safe_sync\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>timeout_sync</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"timeout_sync\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td><label for=\"scgi_dont_route\">scgi_dont_route</label></td>"+
-								"<td class=\"alr\"><input type=\"checkbox\" id=\"scgi_dont_route\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>session</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"session\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td><label for=\"session_lock\">session_lock</label></td>"+
-								"<td class=\"alr\"><input type=\"checkbox\" id=\"session_lock\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td><label for=\"session_on_completion\">session_on_completion</label></td>"+
-								"<td class=\"alr\"><input type=\"checkbox\" id=\"session_on_completion\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>split_file_size</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"split_file_size\" class=\"Textbox num\" maxlength=\"20\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>split_suffix</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"split_suffix\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td><label for=\"use_udp_trackers\">use_udp_trackers</label></td>"+
-								"<td class=\"alr\"><input type=\"checkbox\" id=\"use_udp_trackers\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>http_proxy</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"http_proxy\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>proxy_address</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"proxy_address\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-							"</tr>"+
-							"<tr>"+
-								"<td>bind</td>"+
-								"<td class=\"alr\"><input type=\"text\" id=\"bind\" class=\"Textbox str\" maxlength=\"100\" /></td>"+
-							"</tr>"+
-						"</table>"+
-					"</div>"+
-				"</fieldset>"+
-			"</div>"+
-			"<div id=\"st_btns\" class='aright buttons-list'>"+
-				"<input type=\"button\" value=\"OK\" onclick=\"theDialogManager.hide('stg');theWebUI.setSettings();return(false);\" class=\"OK Button\" />"+
-				"<input type=\"button\" value=\""+theUILang.Cancel+"\" class=\"Cancel Button\" />"+
-			"</div>"+
-		"</div>");
+if (hasThemeHint()) {
+	$(':root').addClass('pre-theme-load').addClass(window.localStorage['theme-hint']);
 }
 
 function correctContent()
 {
-	var showEnum = 
+	if (hasThemeHint() && !thePlugins.isInstalled("theme")) {
+		// Remove theme hint if theme plugin is not used
+		$(':root').removeClass('pre-theme-load').removeClass(window.localStorage['theme-hint']);
+		delete window.localStorage['theme-hint'];
+	}
+
+	var showEnum =
 	{
 		showDownloadsPage:	0x0001,
 		showConnectionPage:	0x0002,
@@ -637,7 +449,8 @@ function correctContent()
 		canAddTorrentsWithoutPath:	0x0100,
 		canAddTorrentsWithoutStarting:	0x0200,
 		canAddTorrentsWithResume:	0x0400,
-		canAddTorrentsWithRandomizeHash:	0x0800
+		canAddTorrentsWithRandomizeHash:	0x0800,
+		canChangeTorrentOptions:	0x1000
 	};
 
 	if(!$type(theWebUI.systemInfo))
@@ -650,6 +463,16 @@ function correctContent()
 		rPlugin.prototype.removePageFromOptions("st_dl");
 	if(!(theWebUI.showFlags & showEnum.showConnectionPage))
 		rPlugin.prototype.removePageFromOptions("st_con");
+	// rtorrent 0.16.x: network.port_open is an unused no-op (nothing in rtorrent
+	// reads it; an explicit deprecated no-op since 0.16.18). Drop its checkbox
+	// from the Connection page, and add an empty grid cell after the "randomize"
+	// checkbox so the two-column layout stays even and the port-range label + its
+	// field remain paired on one row. rtorrent <= 0.9.x keeps the checkbox.
+	if(theWebUI.systemInfo.rTorrent.iVersion>=0x1000)
+	{
+		$("#port_open").closest(".col-md-6").remove();
+		$("#port_random").closest(".col-md-6").after($("<div>").addClass("col-md-6"));
+	}
 	if(!(theWebUI.showFlags & showEnum.showBittorentPage))
 		rPlugin.prototype.removePageFromOptions("st_bt");
 	if(!(theWebUI.showFlags & showEnum.showAdvancedPage))
@@ -674,7 +497,11 @@ function correctContent()
 		$("#prop-superseed").remove();
 		$("#lbl_prop-superseed").remove();
 		$("#dlgProps .OK").remove();
-        }		
+        }
+        if(!(theWebUI.showFlags & showEnum.canChangeTorrentOptions))
+	{
+		$("#addtorrent #torrent_options").remove();
+	}
         if(!(theWebUI.showFlags & showEnum.canAddTorrentsWithoutPath))
 	{
 		$("#addtorrent #not_add_path_option").remove();
@@ -682,15 +509,15 @@ function correctContent()
         if(!(theWebUI.showFlags & showEnum.canAddTorrentsWithoutStarting))
 	{
 		$("#addtorrent #torrents_start_stopped_option").remove();
-	}	
+	}
         if(!(theWebUI.showFlags & showEnum.canAddTorrentsWithResume))
 	{
 		$("#addtorrent #fast_resume_option").remove();
-	}		
+	}
         if(!(theWebUI.showFlags & showEnum.canAddTorrentsWithRandomizeHash))
 	{
 		$("#addtorrent #randomize_hash_option").remove();
-	}	
+	}
 	if(!theWebUI.systemInfo.rTorrent.started)
 	{
 		rPlugin.prototype.removePageFromTabs("TrackerList");
@@ -712,12 +539,12 @@ function correctContent()
 	{
 		if(theWebUI.systemInfo.rTorrent.iVersion>=0x809)
 		{
-			theRequestManager.addRequest("fls","f.prioritize_first=",function(hash, fls, value) 
+			theRequestManager.addRequest("fls","f.prioritize_first=",function(hash, fls, value)
 			{
 				if(value=='1')
 					fls.prioritize = 1;
 			});
-			theRequestManager.addRequest("fls","f.prioritize_last=",function(hash, fls, value) 
+			theRequestManager.addRequest("fls","f.prioritize_last=",function(hash, fls, value)
 			{
 				if(value=='1')
 					fls.prioritize = 2;
@@ -725,10 +552,10 @@ function correctContent()
 		}
 		if(theWebUI.systemInfo.rTorrent.iVersion>=0x900)
 		{
-			$('#st_ao_h table tr:first').remove();
-			$('#st_ao_h table tr:first').remove();
-			$('#st_ao_h table tr:first').remove();
-			$.extend(theRequestManager.aliases, 
+			for (let i = 0; i < 3; i++) {
+				$("#st_ao_h div.row:first").remove();
+			}
+			$.extend(theRequestManager.aliases,
 			{
 				"get_hash_interval"		: { name: "cat", prm: 0 },
 				"get_hash_max_tries"		: { name: "cat", prm: 0 },
@@ -742,15 +569,25 @@ function correctContent()
 	if(theWebUI.systemInfo.rTorrent.iVersion>=0x806)
 	{
 		theRequestManager.aliases[""] = { name: "", prm: 0 };
-		$.extend(theRequestManager.aliases, 
+		$.extend(theRequestManager.aliases,
 		{
 			"d.set_peer_exchange" 		: { name: "d.peer_exchange.set", prm: 0 },
 			"d.set_connection_seed"		: { name: "d.connection_seed.set", prm: 0 }
 		});
 	}
-	if(theWebUI.systemInfo.rTorrent.iVersion>=0x904)	
+	// rTorrent gained d.is_partially_done in 0.9.0. An unknown command faults the
+	// whole d.multicall rather than one field, so on older daemons route it to
+	// the harmless no-op "cat": it answers with an empty string, which keeps the
+	// field in place and reads as "not partially done". Firing at iVersion 0
+	// (daemon unreachable at load) is deliberate: cat is understood by every
+	// daemon generation, so an unknown version degrades safely.
+	if(theWebUI.systemInfo.rTorrent.iVersion<0x900)
 	{
-		$.extend(theRequestManager.aliases, 
+		theRequestManager.aliases["d.is_partially_done"] = { name: "cat", prm: 0 };
+	}
+	if(theWebUI.systemInfo.rTorrent.iVersion>=0x904)
+	{
+		$.extend(theRequestManager.aliases,
 		{
 			"create_link"		:	{ name: "d.create_link", prm: 0 },
 			"d.get_base_filename"	:	{ name: "d.base_filename", prm: 0 },
@@ -809,6 +646,8 @@ function correctContent()
 			"d.get_skip_total"	:	{ name: "d.skip.total", prm: 0 },
 			"d.get_state"		:	{ name: "d.state", prm: 0 },
 			"d.get_state_changed"	:	{ name: "d.state_changed", prm: 0 },
+			"d.get_timestamp_finished"      : { name: "d.timestamp.finished", prm: 0 },
+			"d.get_timestamp_started"      : { name: "d.timestamp.started", prm: 0 },
 			"d.get_state_counter"	:	{ name: "d.state_counter", prm: 0 },
 			"d.get_throttle_name"	:	{ name: "d.throttle_name", prm: 0 },
 			"d.get_tied_to_file"	:	{ name: "d.tied_to_file", prm: 0 },
@@ -839,6 +678,7 @@ function correctContent()
 			"d.set_tied_to_file"	:	{ name: "d.tied_to_file.set", prm: 0 },
 			"d.set_tracker_numwant"	:	{ name: "d.tracker_numwant.set", prm: 0 },
 			"d.set_uploads_max"	:	{ name: "d.uploads_max.set", prm: 0 },
+			"execute"		:	{ name: "execute2", prm: 1 },
 			"execute_capture"	:	{ name: "execute.capture", prm: 1 },
 			"execute_capture_nothrow"	:	{ name: "execute.capture_nothrow", prm: 1 },
 			"execute_nothrow"	:	{ name: "execute.nothrow", prm: 1 },
@@ -997,6 +837,8 @@ function correctContent()
 			"set_use_udp_trackers"	:	{ name: "trackers.use_udp.set", prm: 1 },
 			"set_xmlrpc_dialect"	:	{ name: "network.xmlrpc.dialect.set", prm: 1 },
 			"set_xmlrpc_size_limit"	:	{ name: "network.xmlrpc.size_limit.set", prm: 1 },
+			"schedule"		:	{ name: "schedule2", prm: 1 },
+			"schedule_remove"	:	{ name: "schedule_remove2", prm: 1 },
 			"system.file_allocate"	:	{ name: "system.file.allocate", prm: 0 },
 			"system.file_allocate.set"	:	{ name: "system.file.allocate.set", prm: 1 },
 			"system.method.erase"	:	{ name: "method.erase", prm: 1 },
@@ -1038,6 +880,100 @@ function correctContent()
 			"dht_statistics"	:	{ name: "dht.statistics", prm: 0 },
 			"load"			:	{ name: "load.normal", prm: 1 }
 		});
+	}
+	// iVersion packs one version component per byte, so 0.10.2 is 0x0a02
+	// (0x1002 would be 0.16.2). Newer daemons inherit these.
+	if(theWebUI.systemInfo.rTorrent.iVersion>=0x0a02)
+	{
+		$.extend(theRequestManager.aliases,
+		{
+			"dht"                           : { name: "dht.mode.set", prm: 1 },
+			"throttle.max_uploads.div"      : { name: "throttle.max_uploads.div._val", prm: 1 },
+			"throttle.max_uploads.global"   : { name: "throttle.max_uploads.global._val", prm: 1 },
+			"throttle.max_downloads.div"    : { name: "throttle.max_downloads.div._val", prm: 1 },
+			"throttle.max_downloads.global" : { name: "throttle.max_downloads.global._val", prm: 1 },
+			"ratio.enable"                  : { name: "group.seeding.ratio.enable", prm: 1 },
+			"ratio.disable"                 : { name: "group.seeding.ratio.disable", prm: 1 },
+			"ratio.min"                     : { name: "group2.seeding.ratio.min", prm: 0 },
+			"ratio.max"                     : { name: "group2.seeding.ratio.max", prm: 0 },
+			"ratio.upload"                  : { name: "group2.seeding.ratio.upload", prm: 0 },
+			"ratio.min.set"                 : { name: "group2.seeding.ratio.min.set", prm: 1 },
+			"ratio.max.set"                 : { name: "group2.seeding.ratio.max.set", prm: 1 },
+			"ratio.upload.set"              : { name: "group2.seeding.ratio.upload.set", prm: 1 },
+			"connection_leech"              : { name: "protocol.connection.leech.set", prm: 1 },
+			"connection_seed"               : { name: "protocol.connection.seed.set", prm: 1 },
+		});
+	}
+	if(theWebUI.systemInfo.rTorrent.iVersion>=0x1000)
+	{
+		// rtorrent 0.16.x: deprecated aliases (schedule2, schedule_remove2,
+		// execute2, network.http.max_open*, group2.*) are gated behind
+		// method.use_deprecated which since 0.16.14 can no longer be enabled
+		// from the rc file — only via the -D launch flag. Override the JS
+		// alias map so theRequestManager.map() returns the canonical names
+		// for any code path that builds an XMLRPC command client-side and
+		// sends it via httprpc/multirpc. Mirrors php/methods-0.16.0.php.
+		$.extend(theRequestManager.aliases,
+		{
+			"schedule"          : { name: "schedule",                              prm: 1 },
+			"schedule_remove"   : { name: "schedule.remove",                       prm: 1 },
+			"execute"           : { name: "execute",                               prm: 1 },
+			"get_max_open_http" : { name: "network.http.max_total_connections",    prm: 0 },
+			"set_max_open_http" : { name: "network.http.max_total_connections.set",prm: 1 },
+			"ratio.min"         : { name: "group.seeding.ratio.min",               prm: 0 },
+			"ratio.max"         : { name: "group.seeding.ratio.max",               prm: 0 },
+			"ratio.upload"      : { name: "group.seeding.ratio.upload",            prm: 0 },
+			"ratio.min.set"     : { name: "group.seeding.ratio.min.set",           prm: 1 },
+			"ratio.max.set"     : { name: "group.seeding.ratio.max.set",           prm: 1 },
+			"ratio.upload.set"  : { name: "group.seeding.ratio.upload.set",        prm: 1 },
+		});
+	}
+	if(theWebUI.systemInfo.rTorrent.iVersion>=0x1010)
+	{
+		// rtorrent >= 0.16.16: override aliases for commands that were
+		// removed or now log deprecation warnings. Mirrors php/methods-0.16.16.php.
+		$.extend(theRequestManager.aliases,
+		{
+			"get_max_open_http"      : { name: "system.sockets.http.max_size",           prm: 0 },
+			"set_max_open_http"      : { name: "system.sockets.http.max_alloc.set",      prm: 1 },
+			"set_max_open_files"     : { name: "system.sockets.files.max_alloc.set",     prm: 1 },
+			// The d.multicall entry overrides the d.multicall => d.multicall2
+			// remap from the 0.9.4 table above; d.multicall2 is gone in 0.16.16.
+			"d.multicall"            : { name: "d.multicall",                             prm: 1 },
+			"d.multicall2"           : { name: "d.multicall",                             prm: 1 },
+			"get_http_proxy"         : { name: "network.proxy.http",                     prm: 0 },
+			"set_http_proxy"         : { name: "network.proxy.http.set",                 prm: 1 },
+			"http_proxy"             : { name: "network.proxy.http",                     prm: 0 },
+			"get_proxy_address"      : { name: "network.proxy.global",                    prm: 0 },
+			"set_proxy_address"      : { name: "network.proxy.global.set",                prm: 1 },
+			"get_max_open_sockets"   : { name: "system.sockets.max_size",                prm: 0 },
+			"network.open_sockets"   : { name: "system.sockets.size",                    prm: 0 },
+			"network.max_open_sockets": { name: "system.sockets.max_size",               prm: 0 },
+		});
+	}
+	if(theWebUI.systemInfo.rTorrent.iVersion>=0x1012)
+	{
+		// rtorrent >= 0.16.18: the listening-port commands were renamed
+		// (network.port_range/.random -> network.listen.port.range/.random) and
+		// network.port_open was removed. On a normal launch (no -D) the old names
+		// are absent and fault; mirror php/methods-0.16.18.php so any client-side
+		// XMLRPC keeps working. network.port_open has no replacement -> route it
+		// to the harmless "cat" no-op.
+		$.extend(theRequestManager.aliases,
+		{
+			"get_port_range"  : { name: "network.listen.port.range",      prm: 0 },
+			"set_port_range"  : { name: "network.listen.port.range.set",  prm: 1 },
+			"get_port_random" : { name: "network.listen.port.random",     prm: 0 },
+			"set_port_random" : { name: "network.listen.port.random.set", prm: 1 },
+			"get_port_open"   : { name: "cat", prm: 0 },
+			"set_port_open"   : { name: "cat", prm: 1 },
+			"port_open"       : { name: "cat", prm: 0 },
+		});
+	}
+	if(theWebUI.systemInfo.rTorrent.iVersion < 0x907) {
+		const title = theUILang.requiresAtLeastRtorrent.replace('{version}', 'v0.9.7');
+		$($$('webui.show_open_status')).attr({ disabled: '', title });
+		$($$('lbl_webui.show_open_status')).attr({ title }).addClass('disabled');
 	}
 	$("#rtorrentv").text(theWebUI.systemInfo.rTorrent.version+"/"+theWebUI.systemInfo.rTorrent.libVersion);
 }
